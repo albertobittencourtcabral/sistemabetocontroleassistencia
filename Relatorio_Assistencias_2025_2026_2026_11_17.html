@@ -1,0 +1,3384 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Assistências Técnicas — 2025/2026</title>
+<script src="vendor/chart.umd.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="vendor/pptxgen.bundle.js"></script>
+<style>
+  :root {
+    --navy: #1E3A5F;
+    --navy-dark: #142842;
+    --blue: #2B6CB0;
+    --accent: #3182CE;
+    --bg: #F1F5F9;
+    --card: #FFFFFF;
+    --border: #CBD5E1;
+    --text: #0F172A;
+    --muted: #64748B;
+    --gray-bg: #E2E8F0; --gray-tx: #334155;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  body { background: var(--bg); color: var(--text); }
+
+  /* Header */
+  header {
+    background: var(--navy);
+    color: #fff;
+    padding: 14px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: 0.3px; }
+  header p { font-size: 0.8rem; color: #CBD5E1; }
+  .header-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #2563EB; }
+  .btn-success { background: #15803D; color: #fff; }
+  .btn-success:hover { background: #166534; }
+  .btn-outline { background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25); }
+  .btn-outline:hover { background: rgba(255,255,255,0.22); }
+  .btn-secondary { background: #E2E8F0; color: var(--text); }
+  .btn-secondary:hover { background: #CBD5E1; }
+  .btn-danger { background: #DC2626; color: #fff; padding: 4px 8px; font-size: 0.78rem; }
+  .btn-edit { background: #2563EB; color: #fff; padding: 4px 8px; font-size: 0.78rem; }
+
+  /* Tabs */
+  .tabs {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: transparent;
+    color: var(--muted);
+    border-radius: 0;
+    padding: 12px 18px;
+    border-bottom: 3px solid transparent;
+    font-size: 0.9rem;
+  }
+  .tab-btn.active {
+    color: var(--navy);
+    border-bottom-color: var(--navy);
+  }
+
+  .container { max-width: 1440px; margin: 0 auto; padding: 20px 24px; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* Filter Bar */
+  .filter-bar {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    align-items: end;
+  }
+  .field label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.88rem;
+    background: #fff;
+    color: var(--text);
+  }
+  .field input:focus, .field select:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+  /* KPI Grid */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--navy);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .kpi-card.warn { border-left-color: #D97706; }
+  .kpi-card.danger { border-left-color: #DC2626; }
+  .kpi-card.blue { border-left-color: #2B6CB0; }
+  .kpi-card.green { border-left-color: #15803D; }
+  .kpi-lbl { font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+  .kpi-val { font-size: 1.55rem; font-weight: 800; color: var(--navy); margin-top: 4px; }
+  .kpi-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+  /* Charts Grid */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 960px) { .charts-grid { grid-template-columns: 1fr; } }
+  .chart-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .chart-box h3 { font-size: 0.92rem; color: var(--navy); margin-bottom: 12px; font-weight: 700; }
+  .chart-wrap { position: relative; height: 310px; }
+
+  /* Form Card */
+  .form-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .form-card h2 { font-size: 1.05rem; color: var(--navy); margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  .form-actions { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .items-section { margin-top: 18px; }
+  .items-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .items-toolbar h3 { margin: 0 0 4px; color: var(--navy); font-size: 0.95rem; }
+  .items-help { color: var(--muted); font-size: 0.82rem; }
+  .item-entry { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 12px; background: #F8FAFC; }
+  .item-entry-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--navy); }
+
+  /* Cadastros Grid */
+  .cadastros-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    border-bottom: 1px solid #E2E8F0;
+    font-size: 0.85rem;
+  }
+
+  /* Table */
+  .table-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .table-header {
+    padding: 12px 16px;
+    background: #F8FAFC;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .table-scroll { overflow-x: auto; max-height: 560px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th {
+    background: var(--navy);
+    color: #fff;
+    text-align: left;
+    padding: 10px 10px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    white-space: nowrap;
+  }
+  td { padding: 8px 10px; border-bottom: 1px solid #E2E8F0; vertical-align: middle; }
+  tr:nth-child(even) { background: #F8FAFC; }
+  tr:hover { background: #EFF6FF; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .b-fin { background: #DCFCE7; color: #166534; }
+  .b-cd { background: #DBEAFE; color: #1E40AF; }
+  .b-prod { background: #FEF3C7; color: #92400E; }
+  .insight-card {
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .insight-card strong { display: block; color: var(--navy); margin-bottom: 4px; }
+  .insight-card span { font-size: 0.84rem; color: var(--gray-tx); }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0B1120;
+    --card: #172033;
+    --border: #334155;
+    --text: #E2E8F0;
+    --muted: #94A3B8;
+    --gray-bg: #334155;
+    --gray-tx: #CBD5E1;
+    --accent: #3B82F6;
+  }
+  :root[data-theme="dark"] .tabs { background: var(--card); }
+  :root[data-theme="dark"] .field input,
+  :root[data-theme="dark"] .field select,
+  :root[data-theme="dark"] .field textarea,
+  :root[data-theme="dark"] input,
+  :root[data-theme="dark"] select,
+  :root[data-theme="dark"] textarea {
+    background: #0F172A !important;
+    color: var(--text);
+    border-color: var(--border) !important;
+  }
+  :root[data-theme="dark"] .btn-secondary { background: #334155; color: var(--text); }
+  :root[data-theme="dark"] .btn-secondary:hover { background: #475569; }
+  :root[data-theme="dark"] .table-header,
+  :root[data-theme="dark"] .item-entry { background: #111827; }
+  :root[data-theme="dark"] .list-item,
+  :root[data-theme="dark"] td { border-color: var(--border); }
+  :root[data-theme="dark"] tr:nth-child(even) { background: #111827; }
+  :root[data-theme="dark"] tr:hover { background: #24334C; }
+  :root[data-theme="dark"] .kpi-val,
+  :root[data-theme="dark"] .chart-box h3,
+  :root[data-theme="dark"] .form-card h2,
+  :root[data-theme="dark"] .items-toolbar h3,
+  :root[data-theme="dark"] .item-entry-heading,
+  :root[data-theme="dark"] .insight-card strong,
+  :root[data-theme="dark"] .tab-btn.active { color: #93C5FD; }
+  :root[data-theme="dark"] .tab-btn.active { border-bottom-color: #93C5FD; }
+  :root[data-theme="dark"] .insight-card { background: #172A45; border-color: #1D4ED8; }
+  :root[data-theme="dark"] .b-fin { background: #14532D; color: #BBF7D0; }
+  :root[data-theme="dark"] .b-cd { background: #1E3A8A; color: #BFDBFE; }
+  :root[data-theme="dark"] .b-prod { background: #713F12; color: #FDE68A; }
+
+  /* Print Styles for Executive Report */
+  @media print {
+    header .header-actions, .tabs, .filter-bar, .no-print { display: none !important; }
+    body { background: #fff; }
+    .container { padding: 0; max-width: 100%; }
+    .view { display: block !important; }
+    #view-lancamentos, #view-cadastros, #view-filiais, #view-pendencias, #view-materiais { display: none !important; }
+    .chart-box, .kpi-card { break-inside: avoid; border: 1px solid #94A3B8; }
+    :root[data-theme="dark"] { color-scheme: light; --bg: #fff; --card: #fff; --text: #0F172A; }
+    :root[data-theme="dark"] .table-header,
+    :root[data-theme="dark"] .item-entry,
+    :root[data-theme="dark"] tr:nth-child(even) { background: #fff; }
+  }
+</style>
+</head>
+<body>
+<script id="embedded-data" type="application/json">{"records":[],"catalogos":{"produtos":[],"origens":["(N?O INFORMADO)","ALMOXARIFADO","PRODUÇÃO"],"materiais":["(N?O INFORMADO)","BASES","CABIDEIROS","CANTONEIRA","CHAPEU","CORREDIÇAS","DIVISORIAS","DOBRADIÇAS","ESPELHOS","FERRAGENS","FRENTE GAVETA","FUNDO GAVETA","FUNDOS","KIT FIXAÇÃO ESPELHO","LATERAIS","LATERAL GAVETA","NICHOS","PARAFUSOS","PE ESTRUTURAL","PERFIL","PILASTRA","PORTAS","PRATELEIRAS","PREGO","PUXADORES","PÉS","REGUA","RODAPE","RODAS","SAPATA","TAMPO","TRAVESSA","TRAZEIRA GAVETA","VISTA GAVETEIRO"],"motivos":["AVARIA EM LOJA / MOSTRUÁRIO","DEFEITO DE PINTURA / ACABAMENTO","EMBALAGEM AVARIADA","ERRO / FALTA DE FURAÇÃO","FALTA DE PEÇA","MEDIDAS NÃO CONFORMES","PEÇA AMASSADA","PEÇA AVARIADA / DANIFICADA","PEÇA EMPENADA","PEÇA PARA MOSTRUÁRIO","PEÇA QUEBRADA","PEÇA RISCADA","PEÇA TROCADA","SEM JUSTIFICATIVA / NÃO INFORMADO"],"statusList":["ENVIADO CD","FINALIZADO","PRODUÇÃO"]}}</script>
+
+<header>
+  <div>
+    <h1>RELATÓRIO DE ACOMPANHAMENTO DE ASSISTÊNCIAS — 2025 / 2026</h1>
+    <p>Lançamento Operacional, Custos &amp; Dashboard Gerencial Interativo</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn-outline" id="theme-toggle" type="button" onclick="toggleTheme()" aria-pressed="false">🌙 Tema escuro</button>
+    <button class="btn-outline" onclick="document.getElementById('fileImport').click()">📥 Importar Excel (.xlsx)</button>
+    <input type="file" id="fileImport" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)">
+    <button class="btn-success" onclick="exportExcel()">📤 Exportar Excel</button>
+    <button class="btn-outline" onclick="exportSelfContainedHTML()" title="Baixa uma cópia deste painel já com todos os seus lançamentos e cadastros salvos dentro dele">💾 Salvar Cópia p/ Enviar (.html)</button>
+    <button class="btn-primary" onclick="window.print()">🖨️ Imprimir / PDF Diretoria</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tab-dashboard" onclick="switchTab('dashboard')">📊 Relatório Interativo (Diretoria)</button>
+  <button class="tab-btn" id="tab-lancamentos" onclick="switchTab('lancamentos')">➕ Novo Chamado &amp; Base (<span id="count-badge">5.293</span>)</button>
+  <button class="tab-btn" id="tab-filiais" onclick="switchTab('filiais')">🏢 Análise por Filial</button>
+  <button class="tab-btn" id="tab-pendencias" onclick="switchTab('pendencias')">⏳ Acompanhamento de Pendências</button>
+  <button class="tab-btn" id="tab-materiais" onclick="switchTab('materiais')">🪑 Análise por Modelo</button>
+  <button class="tab-btn" id="tab-producao" onclick="switchTab('producao')">🏭 Produção por Produto</button>
+  <button class="tab-btn" id="tab-cadastros" onclick="switchTab('cadastros')">📋 Cadastros (Modelos / Materiais / Motivos)</button>
+</div>
+
+<div class="container">
+
+  <!-- ==================== VIEW 1: DASHBOARD INTERATIVO ==================== -->
+  <div id="view-dashboard" class="view active">
+    <div class="filter-bar">
+      <div class="field">
+        <label>Período / Ano</label>
+        <select id="flt-periodo" onchange="handleDashboardPeriodChange()">
+          <option value="TODOS_2026">2026 (Ano Inteiro)</option>
+          <option value="2026-01">Jan/2026</option>
+          <option value="2026-02">Fev/2026</option>
+          <option value="2026-03">Mar/2026</option>
+          <option value="2026-04">Abr/2026</option>
+          <option value="2026-05">Mai/2026</option>
+          <option value="2026-06">Jun/2026</option>
+          <option value="2026-07">Jul/2026</option>
+          <option value="2026-08">Ago/2026</option>
+          <option value="2026-09">Set/2026</option>
+          <option value="2026-10">Out/2026</option>
+          <option value="2026-11">Nov/2026</option>
+          <option value="2026-12">Dez/2026</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Filial</label>
+        <select id="flt-filial" onchange="renderDashboard()"><option value="TODOS">Todas as Filiais</option></select>
+      </div>
+      <div class="field">
+        <label>Origem</label>
+        <select id="flt-origem" onchange="renderDashboard()"><option value="TODOS">Todas as Origens</option><option value="(NÃO INFORMADO)">(NÃO INFORMADO)</option><option value="ALMOXARIFADO">ALMOXARIFADO</option><option value="PRODUÇÃO">PRODUÇÃO</option></select>
+      </div>
+      <div class="field">
+        <label>Material / Peça</label>
+        <select id="flt-material" onchange="renderDashboard()"><option value="TODOS">Todos os Materiais</option><option value="(NÃO INFORMADO)">(NÃO INFORMADO)</option><option value="BASES">BASES</option><option value="CABIDEIROS">CABIDEIROS</option><option value="CANTONEIRA">CANTONEIRA</option><option value="CHAPEU">CHAPEU</option><option value="CORREDIÇAS">CORREDIÇAS</option><option value="DIVISORIAS">DIVISORIAS</option><option value="DOBRADIÇAS">DOBRADIÇAS</option><option value="ESPELHOS">ESPELHOS</option><option value="FERRAGENS">FERRAGENS</option><option value="FRENTE GAVETA">FRENTE GAVETA</option><option value="FUNDO GAVETA">FUNDO GAVETA</option><option value="FUNDOS">FUNDOS</option><option value="KIT FIXAÇÃO ESPELHO">KIT FIXAÇÃO ESPELHO</option><option value="LATERAIS">LATERAIS</option><option value="LATERAL GAVETA">LATERAL GAVETA</option><option value="NICHOS">NICHOS</option><option value="PARAFUSOS">PARAFUSOS</option><option value="PERFIL">PERFIL</option><option value="PILASTRA">PILASTRA</option><option value="PORTAS">PORTAS</option><option value="PRATELEIRAS">PRATELEIRAS</option><option value="PREGO">PREGO</option><option value="PUXADORES">PUXADORES</option><option value="PÉS">PÉS</option><option value="REGUA">REGUA</option><option value="RODAPE">RODAPE</option><option value="RODAS">RODAS</option><option value="SAPATA">SAPATA</option><option value="TAMPO">TAMPO</option><option value="TRAVESSA">TRAVESSA</option><option value="TRAZEIRA GAVETA">TRAZEIRA GAVETA</option><option value="VISTA GAVETEIRO">VISTA GAVETEIRO</option></select>
+      </div>
+      <div class="field">
+        <label>Motivo (Unificado)</label>
+        <select id="flt-motivo" onchange="renderDashboard()"><option value="TODOS">Todos os Motivos</option><option value="AVARIA EM LOJA / MOSTRUÁRIO">AVARIA EM LOJA / MOSTRUÁRIO</option><option value="DEFEITO DE PINTURA / ACABAMENTO">DEFEITO DE PINTURA / ACABAMENTO</option><option value="EMBALAGEM AVARIADA">EMBALAGEM AVARIADA</option><option value="ERRO / FALTA DE FURAÇÃO">ERRO / FALTA DE FURAÇÃO</option><option value="FALTA DE PEÇA">FALTA DE PEÇA</option><option value="MEDIDAS NÃO CONFORMES">MEDIDAS NÃO CONFORMES</option><option value="PEÇA AMASSADA">PEÇA AMASSADA</option><option value="PEÇA AVARIADA / DANIFICADA">PEÇA AVARIADA / DANIFICADA</option><option value="PEÇA EMPENADA">PEÇA EMPENADA</option><option value="PEÇA PARA MOSTRUÁRIO">PEÇA PARA MOSTRUÁRIO</option><option value="PEÇA QUEBRADA">PEÇA QUEBRADA</option><option value="PEÇA RISCADA">PEÇA RISCADA</option><option value="PEÇA TROCADA">PEÇA TROCADA</option><option value="SEM JUSTIFICATIVA / NÃO INFORMADO">SEM JUSTIFICATIVA / NÃO INFORMADO</option></select>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="flt-status" onchange="renderDashboard()"><option value="TODOS">Todos os Status</option><option value="ENVIADO CD">ENVIADO CD</option><option value="FINALIZADO">FINALIZADO</option><option value="PRODUÇÃO">PRODUÇÃO</option></select>
+      </div>
+      <div class="field">
+        <button class="btn-secondary" style="width:100%; justify-content:center;" onclick="resetFilters()">Limpar Filtros</button>
+      </div>
+    </div>
+
+    <div class="table-card no-print" style="margin-bottom:18px;">
+      <div class="table-header">
+        <strong style="color:var(--navy);">Produção total da fábrica no período</strong>
+        <span id="production-period-label" style="font-size:0.8rem; color:var(--muted);"></span>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; align-items:end; gap:12px; padding:14px 16px;">
+        <div class="field" style="min-width:220px;">
+          <label for="production-total">Unidades produzidas no período</label>
+          <input id="production-total" type="number" min="0" step="1" placeholder="Informe a produção total" onchange="saveProductionTotal()">
+        </div>
+        <div class="field" style="min-width:190px;">
+          <label for="production-as-of">Produção acumulada até</label>
+          <input id="production-as-of" type="date" onchange="saveProductionTotal()">
+        </div>
+        <button class="btn-primary" id="btn-export-powerpoint" type="button" onclick="exportPowerPoint()">📊 Gerar apresentação PowerPoint</button>
+        <span id="production-total-status" style="font-size:0.82rem; color:var(--muted); flex:1 1 260px;">
+          A relação chamados ÷ produção compara o volume de chamados com a produção total; não representa necessariamente unidades defeituosas, pois uma unidade pode gerar mais de um chamado.
+        </span>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-lbl">Peças Assistidas</div>
+        <div class="kpi-val" id="kpi-pecas">11.448</div>
+        <div class="kpi-sub" id="kpi-chamados">Chamados únicos: 0</div>
+      </div>
+      <div class="kpi-card danger">
+        <div class="kpi-lbl">Custo Total (Notas)</div>
+        <div class="kpi-val" id="kpi-valor">R$&nbsp;96.951,98</div>
+        <div class="kpi-sub" id="kpi-valor-sub">Custo médio: R$&nbsp;8,47 / peça</div>
+      </div>
+      <div class="kpi-card warn">
+        <div class="kpi-lbl">Prazo Médio Atendimento</div>
+        <div class="kpi-val" id="kpi-intervalo">7 dias</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Principal Motivo</div>
+        <div class="kpi-val" id="kpi-motivo" style="font-size:1.1rem;">FALTA DE PEÇA</div>
+        <div class="kpi-sub" id="kpi-motivo-sub">3.299 peças (28,8%)</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-lbl">Modelo Mais Afetado</div>
+        <div class="kpi-val" id="kpi-produto" style="font-size:1.0rem;">ROUPEIRO BELIZE 5PT 3GV - AMENDOA/OFF WHITE</div>
+        <div class="kpi-sub" id="kpi-produto-sub">999 peças (8,7%)</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-box">
+        <h3>1. Pareto de Motivos Unificados (Qtde de Peças)</h3>
+        <div class="chart-wrap"><canvas id="chartMotivo" width="974" height="930" style="display: block; box-sizing: border-box; height: 310px; width: 324px;"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h3>2. Top 10 Materiais / Componentes Assistidos (Peças)</h3>
+        <div class="chart-wrap"><canvas id="chartMaterial" width="974" height="930" style="display: block; box-sizing: border-box; height: 310px; width: 324px;"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h3>3. Top 10 Modelos com Maior Incidência (Peças)</h3>
+        <div class="chart-wrap"><canvas id="chartProduto" width="974" height="930" style="display: block; box-sizing: border-box; height: 310px; width: 324px;"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h3>4. Evolução Mensal de Assistências (Peças por Período)</h3>
+        <div class="chart-wrap"><canvas id="chartMensal" width="974" height="930" style="display: block; box-sizing: border-box; height: 310px; width: 324px;"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Resumo Consolidado por Motivo Unificado -->
+    <div class="table-card" style="margin-bottom: 18px;">
+      <div class="table-header">
+        <strong style="color:var(--navy);">Ranking de Motivos por Chamados Distintos (Filtro Atual)</strong>
+        <span style="font-size:0.8rem; color:var(--muted);">Motivos agrupados; cada número de chamado é contado uma vez</span>
+      </div>
+      <div class="table-scroll" style="max-height:380px;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Motivo Unificado</th>
+              <th style="text-align:right;">Chamados Únicos</th>
+              <th style="text-align:right;">Registros</th>
+              <th style="text-align:right;">Qtde Peças</th>
+              <th style="text-align:right;">Chamados / Produção Geral</th>
+              <th style="text-align:right;">Custo Total (R$)</th>
+              <th>Material Mais Afetado</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-resumo-motivo"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==================== VIEW 2: LANÇAMENTOS ==================== -->
+  <div id="view-lancamentos" class="view">
+    <div class="form-card">
+      <h2 id="form-title">Registrar Novo Chamado de Assistência</h2>
+      <input type="hidden" id="edit-id" value="">
+      <div class="form-grid">
+        <div class="field">
+          <label>Nº Chamado *</label>
+          <input type="text" id="inp-chamado" placeholder="Ex: 405400" required="">
+        </div>
+        <div class="field">
+          <label>Data Inicial *</label>
+          <input type="date" id="inp-data" required="">
+        </div>
+        <div class="field">
+          <label>Prazo</label>
+          <input type="date" id="inp-prazo">
+        </div>
+        <div class="field">
+          <label>Período (Mês Ref.) *</label>
+          <select id="inp-periodo"><option value="2025-03">Mar/2025</option><option value="2025-04">Abr/2025</option><option value="2025-05">Mai/2025</option><option value="2025-06">Jun/2025</option><option value="2025-07">Jul/2025</option><option value="2025-08">Ago/2025</option><option value="2025-09">Set/2025</option><option value="2025-10">Out/2025</option><option value="2025-11">Nov/2025</option><option value="2025-12">Dez/2025</option><option value="2026-01">Jan/2026</option><option value="2026-02">Fev/2026</option><option value="2026-03">Mar/2026</option><option value="2026-04">Abr/2026</option><option value="2026-05">Mai/2026</option><option value="2026-06">Jun/2026</option><option value="2026-07">Jul/2026</option><option value="2026-08">Ago/2026</option><option value="2026-09">Set/2026</option><option value="2026-10">Out/2026</option><option value="2026-11">Nov/2026</option><option value="2026-12">Dez/2026</option></select>
+        </div>
+        <div class="field">
+          <label>Filial</label>
+          <input type="text" id="inp-filial" placeholder="Ex: 243">
+        </div>
+        <div class="field">
+          <label>OP</label>
+          <input type="text" id="inp-op" placeholder="Ex: 55595">
+        </div>
+      </div>
+      <div class="items-section">
+        <div class="items-toolbar">
+          <div>
+            <h3>Itens do chamado</h3>
+            <div class="items-help">Adicione cada modelo ou peça antes de salvar. Os dados do chamado serão compartilhados entre os itens.</div>
+          </div>
+          <button type="button" class="btn-secondary" id="add-item-btn" onclick="addItem()">➕ Adicionar item</button>
+        </div>
+        <div id="item-list">
+          <div class="item-entry" data-item-number="1">
+            <div class="item-entry-heading">
+              <strong>Item 1</strong>
+              <button type="button" class="btn-danger remove-item-btn" onclick="removeItem(this)" hidden="">Remover item</button>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label>Código Peça</label>
+                <input type="text" id="inp-codigo" data-item-field="codigo" placeholder="Ex: ROU0009016-0027">
+              </div>
+              <div class="field" style="grid-column: span 2;">
+                <label>Produto / Modelo *</label>
+                <input type="text" id="inp-produto" data-item-field="produto" list="dl-produtos" placeholder="Digite ou selecione o modelo..." required="">
+                <datalist id="dl-produtos"></datalist>
+              </div>
+              <div class="field">
+                <label>Quantidade *</label>
+                <input type="number" id="inp-qtde" data-item-field="qtde" min="1" value="1" required="">
+              </div>
+              <div class="field">
+                <label>Origem *</label>
+                <select id="inp-origem" data-item-field="origem"><option value="">(Selecione a Origem)</option><option value="ALMOXARIFADO">ALMOXARIFADO</option><option value="PRODUÇÃO">PRODUÇÃO</option></select>
+              </div>
+              <div class="field">
+                <label>Material / Componente *</label>
+                <select id="inp-material" data-item-field="material"><option value="">(Selecione o Material)</option><option value="BASES">BASES</option><option value="CABIDEIROS">CABIDEIROS</option><option value="CANTONEIRA">CANTONEIRA</option><option value="CHAPEU">CHAPEU</option><option value="CORREDIÇAS">CORREDIÇAS</option><option value="DIVISORIAS">DIVISORIAS</option><option value="DOBRADIÇAS">DOBRADIÇAS</option><option value="ESPELHOS">ESPELHOS</option><option value="FERRAGENS">FERRAGENS</option><option value="FRENTE GAVETA">FRENTE GAVETA</option><option value="FUNDO GAVETA">FUNDO GAVETA</option><option value="FUNDOS">FUNDOS</option><option value="KIT FIXAÇÃO ESPELHO">KIT FIXAÇÃO ESPELHO</option><option value="LATERAIS">LATERAIS</option><option value="LATERAL GAVETA">LATERAL GAVETA</option><option value="NICHOS">NICHOS</option><option value="PARAFUSOS">PARAFUSOS</option><option value="PERFIL">PERFIL</option><option value="PILASTRA">PILASTRA</option><option value="PORTAS">PORTAS</option><option value="PRATELEIRAS">PRATELEIRAS</option><option value="PREGO">PREGO</option><option value="PUXADORES">PUXADORES</option><option value="PÉS">PÉS</option><option value="REGUA">REGUA</option><option value="RODAPE">RODAPE</option><option value="RODAS">RODAS</option><option value="SAPATA">SAPATA</option><option value="TAMPO">TAMPO</option><option value="TRAVESSA">TRAVESSA</option><option value="TRAZEIRA GAVETA">TRAZEIRA GAVETA</option><option value="VISTA GAVETEIRO">VISTA GAVETEIRO</option></select>
+              </div>
+              <div class="field">
+                <label>Motivo (Unificado) *</label>
+                <select id="inp-motivo" data-item-field="motivo"><option value="">(Selecione o Motivo)</option><option value="AVARIA EM LOJA / MOSTRUÁRIO">AVARIA EM LOJA / MOSTRUÁRIO</option><option value="DEFEITO DE PINTURA / ACABAMENTO">DEFEITO DE PINTURA / ACABAMENTO</option><option value="EMBALAGEM AVARIADA">EMBALAGEM AVARIADA</option><option value="ERRO / FALTA DE FURAÇÃO">ERRO / FALTA DE FURAÇÃO</option><option value="FALTA DE PEÇA">FALTA DE PEÇA</option><option value="MEDIDAS NÃO CONFORMES">MEDIDAS NÃO CONFORMES</option><option value="PEÇA AMASSADA">PEÇA AMASSADA</option><option value="PEÇA AVARIADA / DANIFICADA">PEÇA AVARIADA / DANIFICADA</option><option value="PEÇA EMPENADA">PEÇA EMPENADA</option><option value="PEÇA PARA MOSTRUÁRIO">PEÇA PARA MOSTRUÁRIO</option><option value="PEÇA QUEBRADA">PEÇA QUEBRADA</option><option value="PEÇA RISCADA">PEÇA RISCADA</option><option value="PEÇA TROCADA">PEÇA TROCADA</option><option value="SEM JUSTIFICATIVA / NÃO INFORMADO">SEM JUSTIFICATIVA / NÃO INFORMADO</option></select>
+              </div>
+              <div class="field">
+                <label>Nº Nota Fiscal</label>
+                <input type="text" id="inp-nf" data-item-field="nf" placeholder="Ex: 19140">
+              </div>
+              <div class="field">
+                <label>Data Nota Fiscal</label>
+                <input type="date" id="inp-data-nf" data-item-field="dataNf">
+              </div>
+              <div class="field">
+                <label>Valor (R$)</label>
+                <input type="number" id="inp-valor" data-item-field="valor" step="0.01" min="0" value="0.00">
+              </div>
+              <div class="field">
+                <label>Status *</label>
+                <select id="inp-status" data-item-field="status"><option value="ENVIADO CD">ENVIADO CD</option><option value="FINALIZADO">FINALIZADO</option><option value="PRODUÇÃO">PRODUÇÃO</option></select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" onclick="saveRecord()">💾 Salvar Chamado</button>
+        <button class="btn-secondary" onclick="clearForm()">Limpar Campos</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <strong style="color:var(--navy);">Histórico de Assistências (2025/2026 — até 300 registros por busca)</strong>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+          <select id="quick-filter" aria-label="Filtro rápido" onchange="renderTable()" style="padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:0.85rem;">
+            <option value="TODOS">Todos os chamados</option>
+            <option value="PRODUCAO_30_DIAS">Em produção — data inicial nos últimos 30 dias</option>
+          </select>
+          <input type="text" id="ticket-search" placeholder="Filtrar pelo nº chamado..." aria-label="Filtrar pelo número do chamado" oninput="renderTable()" style="padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:0.85rem; width:210px;">
+          <input type="text" id="branch-search" placeholder="Filtrar pela filial..." aria-label="Filtrar pela filial" oninput="renderTable()" style="padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:0.85rem; width:180px;">
+          <input type="text" id="search-box" placeholder="Buscar chamado, modelo, código, NF, motivo..." onkeyup="renderTable()" style="padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:0.85rem; width:300px;">
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Chamado</th>
+              <th>Data Ini.</th>
+              <th>Prazo</th>
+              <th>Período</th>
+              <th>Filial</th>
+              <th>Código</th>
+              <th>Modelo</th>
+              <th style="text-align:right;">Qtde</th>
+              <th>Setor</th>
+              <th>Origem</th>
+              <th>Material</th>
+              <th>Motivo</th>
+              <th>NF</th>
+              <th style="text-align:right;">Valor</th>
+              <th>Status</th>
+              <th class="no-print">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-lancamentos"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VIEW 3: ANÁLISE POR FILIAL ==================== -->
+  <div id="view-filiais" class="view">
+    <div class="filter-bar">
+      <div class="field">
+        <label>Período</label>
+        <select id="filial-periodo" onchange="renderFiliais()"></select>
+      </div>
+      <div class="field">
+        <label>Filial</label>
+        <select id="filial-filial" onchange="renderFiliais()"></select>
+      </div>
+      <div class="field">
+        <label>Modelo</label>
+        <select id="filial-modelo" onchange="renderFiliais()"></select>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="filial-status" onchange="renderFiliais()"></select>
+      </div>
+      <div class="field">
+        <button class="btn-secondary" style="width:100%; justify-content:center;" onclick="resetFilialFilters()">Limpar Filtros</button>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-lbl">Filiais com Chamados</div>
+        <div class="kpi-val" id="filial-kpi-total">0</div>
+        <div class="kpi-sub">Filiais presentes no período</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-lbl">Total de Chamados</div>
+        <div class="kpi-val" id="filial-kpi-chamados">0</div>
+        <div class="kpi-sub">Ocorrências registradas</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-lbl">Peças Assistidas</div>
+        <div class="kpi-val" id="filial-kpi-pecas">0</div>
+        <div class="kpi-sub">Quantidade total</div>
+      </div>
+      <div class="kpi-card danger">
+        <div class="kpi-lbl">Custo Total</div>
+        <div class="kpi-val" id="filial-kpi-valor">R$ 0,00</div>
+        <div class="kpi-sub" id="filial-kpi-media">Média por chamado: R$ 0,00</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-box">
+        <h3>Top 15 Filiais por Chamados</h3>
+        <div class="chart-wrap"><canvas id="chartFilialChamados"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h3>Top 15 Filiais por Custo</h3>
+        <div class="chart-wrap"><canvas id="chartFilialCustos"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h3>Tempo Médio de Atendimento por Filial (dias)</h3>
+        <div class="chart-wrap"><canvas id="chartFilialPrazo"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-box" style="margin-bottom:16px;">
+      <h3 id="filial-custom-title">Gráfico Personalizado por Filial</h3>
+      <div class="form-grid" style="margin-bottom:12px;">
+        <div class="field">
+          <label>Informação</label>
+          <select id="filial-chart-metric" onchange="renderCustomFilialChart()">
+            <option value="chamados">Número de chamados</option>
+            <option value="pecas">Peças assistidas</option>
+            <option value="valor">Custo total (R$)</option>
+            <option value="mediaChamado">Custo médio por chamado (R$)</option>
+            <option value="prazoMedio">Tempo médio de atendimento (dias)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Formato do gráfico</label>
+          <select id="filial-chart-type" onchange="renderCustomFilialChart()">
+            <option value="bar">Barras</option>
+            <option value="line">Linhas</option>
+            <option value="pie">Pizza</option>
+            <option value="doughnut">Rosca</option>
+          </select>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chartFilialCustom"></canvas></div>
+    </div>
+
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">
+      <div class="insight-card">
+        <strong>Maior volume de chamados</strong>
+        <span id="filial-insight-volume">—</span>
+      </div>
+      <div class="insight-card">
+        <strong>Maior custo total</strong>
+        <span id="filial-insight-custo">—</span>
+      </div>
+      <div class="insight-card">
+        <strong>Maior custo médio por chamado</strong>
+        <span id="filial-insight-media">—</span>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <strong style="color:var(--navy);">Ranking detalhado por filial</strong>
+        <span id="filial-ranking-context" style="font-size:0.8rem; color:var(--muted);">Ordenado pelo número de chamados</span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Filial</th>
+              <th style="text-align:right;">Chamados</th>
+              <th style="text-align:right;">Peças</th>
+              <th style="text-align:right;">Chamados / Produção Geral (%)</th>
+              <th style="text-align:right;">Custo Total</th>
+              <th style="text-align:right;">Média / Chamado</th>
+              <th style="text-align:right;">Prazo Médio (dias)</th>
+              <th style="text-align:right;">Peças / Chamado</th>
+              <th>Principal Motivo</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-ranking-filiais"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <strong style="color:var(--navy);">Detalhamento completo dos chamados</strong>
+        <span id="filial-detail-count" style="font-size:0.8rem; color:var(--muted);">0 registros</span>
+      </div>
+      <div style="padding:0 16px 10px; font-size:0.8rem; color:var(--muted);">
+        Uma linha por registro, incluindo todos os itens; chamados repetidos aparecem em várias linhas, mas contam uma vez no ranking. Os filtros de período, filial, modelo e status são aplicados.
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Chamado</th>
+              <th>Data Ini.</th>
+              <th>Prazo</th>
+              <th>Período</th>
+              <th>Filial</th>
+              <th>Código</th>
+              <th>Modelo</th>
+              <th style="text-align:right;">Qtde</th>
+              <th>Setor</th>
+              <th>Origem</th>
+              <th>Material</th>
+              <th>Motivo</th>
+              <th>NF</th>
+              <th style="text-align:right;">Valor</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-filial-detalhes"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ACOMPANHAMENTO DE PENDÊNCIAS ==================== -->
+  <div id="view-pendencias" class="view">
+    <div class="filter-bar">
+      <div class="field">
+        <label>Filial</label>
+        <select id="pending-filial" onchange="renderPendingAnalysis()"></select>
+      </div>
+      <div class="field">
+        <label>Modelo</label>
+        <select id="pending-modelo" onchange="renderPendingAnalysis()"></select>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="pending-status" onchange="renderPendingAnalysis()"></select>
+      </div>
+      <div class="field">
+        <label>Tempo em aberto</label>
+        <select id="pending-age" onchange="renderPendingAnalysis()">
+          <option value="TODOS">Todas as faixas</option>
+          <option value="0-7">0–7 dias</option>
+          <option value="8-15">8–15 dias</option>
+          <option value="16-30">16–30 dias</option>
+          <option value="31+">31 dias ou mais</option>
+          <option value="SEM_DATA">Sem data válida</option>
+        </select>
+      </div>
+      <div class="field">
+        <button class="btn-secondary" style="width:100%; justify-content:center;" onclick="resetPendingFilters()">Limpar Filtros</button>
+      </div>
+    </div>
+    <p style="color:var(--muted); margin:0 0 12px;">Faixas de tempo são apenas descritivas e não representam prazo ou SLA. Chamados são agrupados uma única vez pelo número.</p>
+    <div class="kpi-grid">
+      <div class="kpi-card blue">
+        <div class="kpi-lbl">Chamados em aberto</div>
+        <div class="kpi-val" id="pending-kpi-total">0</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-lbl">0–7 dias</div>
+        <div class="kpi-val" id="pending-kpi-0-7">0</div>
+      </div>
+      <div class="kpi-card warn">
+        <div class="kpi-lbl">8–15 dias</div>
+        <div class="kpi-val" id="pending-kpi-8-15">0</div>
+      </div>
+      <div class="kpi-card danger">
+        <div class="kpi-lbl">16–30 dias</div>
+        <div class="kpi-val" id="pending-kpi-16-30">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">31 dias ou mais</div>
+        <div class="kpi-val" id="pending-kpi-31-plus">0</div>
+      </div>
+    </div>
+    <div class="chart-box" style="margin-bottom:16px;">
+      <h3>Chamados por tempo em aberto</h3>
+      <div class="chart-wrap"><canvas id="chartPendingAge"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <strong style="color:var(--navy);">Detalhamento das pendências</strong>
+        <span id="pending-table-count" style="font-size:0.8rem; color:var(--muted);"></span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Chamado</th>
+              <th>Data de abertura</th>
+              <th>Prazo</th>
+              <th style="text-align:right;">Dias em aberto</th>
+              <th>Status</th>
+              <th>Filial(is)</th>
+              <th>Modelo(s)</th>
+              <th style="text-align:right;">Itens</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-pendencias"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ANÁLISE POR MODELO ==================== -->
+  <div id="view-materiais" class="view">
+    <div class="filter-bar">
+      <div class="field">
+        <label>Período de referência</label>
+        <select id="product-analysis-period" onchange="renderProductAnalysis()"></select>
+      </div>
+      <div class="field">
+        <label>Filial</label>
+        <select id="product-analysis-filial" onchange="renderProductAnalysis()"></select>
+      </div>
+      <div class="field">
+        <label>Origem</label>
+        <select id="product-analysis-origem" onchange="renderProductAnalysis()"></select>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="product-analysis-status" onchange="renderProductAnalysis()"></select>
+      </div>
+      <div class="field">
+        <label>Modelo / produto</label>
+        <select id="product-analysis-product" onchange="renderProductAnalysis()"></select>
+      </div>
+      <div class="field">
+        <button class="btn-secondary" style="width:100%; justify-content:center;" onclick="resetProductAnalysisFilters()">Limpar Filtros</button>
+      </div>
+    </div>
+
+    <div style="margin:0 0 16px; color:var(--muted); font-size:0.85rem;">
+      A análise usa o modelo/produto informado no chamado. O custo soma os valores registrados para as peças usadas nas assistências.
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card blue">
+        <div class="kpi-lbl">Chamados Únicos</div>
+        <div class="kpi-val" id="product-kpi-chamados">0</div>
+        <div class="kpi-sub">Números de chamados distintos</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-lbl">Modelos com Registros</div>
+        <div class="kpi-val" id="product-kpi-total">0</div>
+        <div class="kpi-sub">Modelos presentes nos filtros</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-lbl">Peças de Reposição Usadas</div>
+        <div class="kpi-val" id="product-kpi-pecas">0</div>
+        <div class="kpi-sub">Quantidade usada nos registros</div>
+      </div>
+      <div class="kpi-card danger">
+        <div class="kpi-lbl">Custo Total Registrado</div>
+        <div class="kpi-val" id="product-kpi-valor">R$ 0,00</div>
+        <div class="kpi-sub" id="product-kpi-custo-peca">Custo médio por peça de reposição: R$ 0,00</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-box">
+        <h3>Top 10 Modelos por Chamados Únicos</h3>
+        <div class="chart-wrap"><canvas id="chartProductChamados"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h3>Top 10 Modelos por Gasto Registrado com Peças</h3>
+        <div class="chart-wrap"><canvas id="chartProductCusto"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <strong style="color:var(--navy);">Ranking de produtos com mais peças afetadas</strong>
+        <span style="font-size:0.8rem; color:var(--muted);">Ordenado pela quantidade de peças; chamados repetidos dentro do mesmo produto contam uma vez.</span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Modelo / Produto</th>
+              <th style="text-align:right;">Chamados Únicos</th>
+              <th style="text-align:right;">Registros</th>
+              <th style="text-align:right;">Peças Afetadas</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-ranking-produtos-problemas"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <strong style="color:var(--navy);">Detalhamento por modelo com custo registrado</strong>
+        <span style="font-size:0.8rem; color:var(--muted);">Modelos sem custo registrado não aparecem nesta tabela. Chamados são contados uma vez por número dentro de cada modelo; linhas sem número não entram nessa contagem.</span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Modelo / Produto</th>
+              <th style="text-align:right;">Chamados Únicos</th>
+              <th style="text-align:right;">Registros</th>
+              <th style="text-align:right;">Peças de Reposição</th>
+              <th style="text-align:right;">Custo Total Registrado</th>
+              <th style="text-align:right;">% do Custo</th>
+              <th style="text-align:right;">Custo / Peça de Reposição</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-ranking-produtos"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VIEW: PRODUÇÃO POR PRODUTO ==================== -->
+  <div id="view-producao" class="view">
+    <div class="table-card">
+      <div class="table-header">
+        <strong style="color:var(--navy);">Produção por produto/modelo</strong>
+        <span id="product-production-period-label" style="font-size:0.8rem; color:var(--muted);"></span>
+      </div>
+      <div id="product-production-status" style="padding:0 16px 12px; color:var(--muted); font-size:0.85rem;">
+        Opcional: informe as unidades produzidas de cada modelo no mesmo período. A incidência é calculada como peças afetadas ÷ unidades produzidas do modelo; modelos sem produção informada ficam sem percentual.
+      </div>
+      <div class="filter-bar" style="margin:0 16px 16px;">
+        <div class="field">
+          <label for="product-production-period">Filtrar por período</label>
+          <select id="product-production-period" onchange="renderProductionByProduct()"></select>
+        </div>
+        <div class="field">
+          <label for="product-production-sort">Ordenar produtos</label>
+          <select id="product-production-sort" onchange="renderProductionByProduct()">
+            <option value="pieces">Peças afetadas (maior para menor)</option>
+            <option value="incidence">Incidência (maior para menor)</option>
+            <option value="name">Nome (A–Z)</option>
+          </select>
+        </div>
+      </div>
+      <div class="charts-grid" style="margin:0 16px 18px;">
+        <div class="chart-box">
+          <h3>Top produtos por peças afetadas</h3>
+          <p id="production-pieces-chart-note" style="color:var(--muted); font-size:0.82rem;"></p>
+          <div class="chart-wrap"><canvas id="chartProductionPieces"></canvas></div>
+        </div>
+        <div class="chart-box">
+          <h3>Peças afetadas sobre a produção do produto (%)</h3>
+          <div class="field" style="max-width:320px; margin-bottom:8px;">
+            <label for="production-incidence-sort">Ordenar gráfico por</label>
+            <select id="production-incidence-sort" onchange="renderProductionByProduct()">
+              <option value="incidence">Maior porcentagem</option>
+              <option value="pieces">Mais peças afetadas</option>
+              <option value="name">Nome (A–Z)</option>
+            </select>
+          </div>
+          <p id="production-incidence-chart-note" style="color:var(--muted); font-size:0.82rem;"></p>
+          <div class="chart-wrap"><canvas id="chartProductionIncidence"></canvas></div>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Produto / Modelo</th>
+              <th style="text-align:right;">Produzido (unidades)</th>
+              <th style="text-align:right;">Peças afetadas</th>
+              <th style="text-align:right;">Chamados únicos</th>
+              <th style="text-align:right;">Incidência (%)</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-producao-produtos"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VIEW: CADASTROS ==================== -->
+  <div id="view-cadastros" class="view">
+    <div class="cadastros-grid">
+      <div class="form-card">
+        <h2>Modelos / Produtos</h2>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <input type="text" id="new-produto" placeholder="Nome do novo modelo..." style="flex:1; padding:8px; border:1px solid var(--border); border-radius:6px;">
+          <button class="btn-primary" onclick="addCatalog('produtos', 'new-produto')">+ Add</button>
+        </div>
+        <div id="list-produtos" style="max-height:380px; overflow-y:auto; border:1px solid var(--border); border-radius:6px;"></div>
+      </div>
+
+      <div class="form-card">
+        <h2>Materiais / Componentes</h2>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <input type="text" id="new-material" placeholder="Nome do novo material..." style="flex:1; padding:8px; border:1px solid var(--border); border-radius:6px;">
+          <button class="btn-primary" onclick="addCatalog('materiais', 'new-material')">+ Add</button>
+        </div>
+        <div id="list-materiais" style="max-height:380px; overflow-y:auto; border:1px solid var(--border); border-radius:6px;"></div>
+      </div>
+
+      <div class="form-card">
+        <h2>Motivos Unificados</h2>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <input type="text" id="new-motivo" placeholder="Nome do novo motivo..." style="flex:1; padding:8px; border:1px solid var(--border); border-radius:6px;">
+          <button class="btn-primary" onclick="addCatalog('motivos', 'new-motivo')">+ Add</button>
+        </div>
+        <div id="list-motivos" style="max-height:380px; overflow-y:auto; border:1px solid var(--border); border-radius:6px;"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SEED_DATA = {"meses":[{"key":"2025-03","label":"Mar/2025"},{"key":"2025-04","label":"Abr/2025"},{"key":"2025-05","label":"Mai/2025"},{"key":"2025-06","label":"Jun/2025"},{"key":"2025-07","label":"Jul/2025"},{"key":"2025-08","label":"Ago/2025"},{"key":"2025-09","label":"Set/2025"},{"key":"2025-10","label":"Out/2025"},{"key":"2025-11","label":"Nov/2025"},{"key":"2025-12","label":"Dez/2025"},{"key":"2026-01","label":"Jan/2026"},{"key":"2026-02","label":"Fev/2026"},{"key":"2026-03","label":"Mar/2026"},{"key":"2026-04","label":"Abr/2026"},{"key":"2026-05","label":"Mai/2026"},{"key":"2026-06","label":"Jun/2026"},{"key":"2026-07","label":"Jul/2026"},{"key":"2026-08","label":"Ago/2026"},{"key":"2026-09","label":"Set/2026"},{"key":"2026-10","label":"Out/2026"},{"key":"2026-11","label":"Nov/2026"}],"produtos":[],"origens":["(N?O INFORMADO)","ALMOXARIFADO","PRODUÇÃO"],"materiais":["(N?O INFORMADO)","BASES","CABIDEIROS","CANTONEIRA","CHAPEU","CORREDIÇAS","DIVISORIAS","DOBRADIÇAS","ESPELHOS","FERRAGENS","FRENTE GAVETA","FUNDO GAVETA","FUNDOS","KIT FIXAÇÃO ESPELHO","LATERAIS","LATERAL GAVETA","NICHOS","PARAFUSOS","PE ESTRUTURAL","PERFIL","PILASTRA","PORTAS","PRATELEIRAS","PREGO","PUXADORES","PÉS","REGUA","RODAPE","RODAS","SAPATA","TAMPO","TRAVESSA","TRAZEIRA GAVETA","VISTA GAVETEIRO"],"motivos":["AVARIA EM LOJA / MOSTRUÁRIO","DEFEITO DE PINTURA / ACABAMENTO","EMBALAGEM AVARIADA","ERRO / FALTA DE FURAÇÃO","FALTA DE PEÇA","MEDIDAS NÃO CONFORMES","PEÇA AMASSADA","PEÇA AVARIADA / DANIFICADA","PEÇA EMPENADA","PEÇA PARA MOSTRUÁRIO","PEÇA QUEBRADA","PEÇA RISCADA","PEÇA TROCADA","SEM JUSTIFICATIVA / NÃO INFORMADO"],"statusList":["ENVIADO CD","FINALIZADO","PRODUÇÃO"]};
+
+function safeSetStorage(key, val) {
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+    return true;
+  } catch (e) {
+    console.warn('localStorage indisponível ou limite excedido:', e);
+    return false;
+  }
+}
+
+function safeGetStorage(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    return null;
+  }
+}
+
+const STORAGE_KEY = 'assistencias_2026_11_20_v4';
+const CAT_KEY = 'assistencias_catalogos_2026_11_20_v4';
+const DATA_SOURCE_KEY = 'assistencias_data_source_version_v1';
+const DATA_SOURCE_VERSION = 'Relatorio de Assistencias Atualizado777.xlsx-v4';
+const THEME_KEY = 'assistencias_theme_v1';
+const PRODUCTION_TOTALS_KEY = 'assistencias_production_totals_v1';
+const PRODUCT_PRODUCTION_KEY = 'assistencias_product_production_v1';
+
+let productionTotals = {};
+let productProduction = {};
+
+const MOTIVO_UNIFY_MAP = {"FALTA DE PEÇAS": "FALTA DE PEÇA", "PEÇA QUEBRADA": "PEÇA QUEBRADA", "PEÇAS AVARIADAS": "PEÇA AVARIADA / DANIFICADA", "PEÇAS DANIFICADAS": "PEÇA AVARIADA / DANIFICADA", "PEÇA RISCADA": "PEÇA RISCADA", "MOSTRUARIO DANIFICADO": "AVARIA EM LOJA / MOSTRUÁRIO", "DANIFICADO LOJA": "AVARIA EM LOJA / MOSTRUÁRIO", "PEÇA AMASSADA": "PEÇA AMASSADA", "FURAÇÃO ERRADA": "ERRO / FALTA DE FURAÇÃO", "SEM FURAÇÃO": "ERRO / FALTA DE FURAÇÃO", "PEÇAS PARA MOSTRUARIO": "PEÇA PARA MOSTRUÁRIO", "PEÇAS TROCADAS": "PEÇA TROCADA", "MEDIDAS NÃO CONFORMES": "MEDIDAS NÃO CONFORMES", "PEÇA EMPENADA": "PEÇA EMPENADA", "SEM JUSTIFICATIVA": "SEM JUSTIFICATIVA / NÃO INFORMADO", "": "SEM JUSTIFICATIVA / NÃO INFORMADO", "COR TONALIDADE DIFERENTE": "DEFEITO DE PINTURA / ACABAMENTO", "SEM PINTURA": "DEFEITO DE PINTURA / ACABAMENTO", "SEM ACABAMENTO": "DEFEITO DE PINTURA / ACABAMENTO", "FALHA NA PINTURA": "DEFEITO DE PINTURA / ACABAMENTO", "EMBALAGEM AVARIADA": "EMBALAGEM AVARIADA"};
+
+function unifyMotivo(raw) {
+  const k = String(raw || '').replace(/\u00a0/g, ' ').trim().toUpperCase();
+  return MOTIVO_UNIFY_MAP[k] || k || 'SEM JUSTIFICATIVA / NÃO INFORMADO';
+}
+
+let state = {
+  records: [],
+  catalogos: {
+    produtos: [],
+    origens: [],
+    materiais: [],
+    motivos: [],
+    statusList: []
+  }
+};
+
+function loadProductionData(snapshot) {
+  const loadObject = (key, snapshotValue) => {
+    const raw = safeGetStorage(key);
+    if (raw === null) return snapshotValue && typeof snapshotValue === 'object' ? snapshotValue : {};
+    try {
+      const value = JSON.parse(raw);
+      if (!value || Array.isArray(value) || typeof value !== 'object') {
+        throw new Error('Formato inválido para os dados de produção.');
+      }
+      return value;
+    } catch (e) {
+      console.error(`Erro ao ler os dados salvos em ${key}:`, e);
+      return snapshotValue && typeof snapshotValue === 'object' ? snapshotValue : {};
+    }
+  };
+  productionTotals = loadObject(PRODUCTION_TOTALS_KEY, snapshot?.productionTotals);
+  productProduction = loadObject(PRODUCT_PRODUCTION_KEY, snapshot?.productProduction);
+}
+
+const barValueLabelsPlugin = {
+  id: 'barValueLabels',
+  afterDatasetsDraw(chart, args, options) {
+    if (chart.config.type !== 'bar') return;
+
+    const horizontal = chart.options.indexAxis === 'y';
+    const formatValue = options.unit === 'R$'
+      ? formatMoney
+      : value => {
+        const formatted = Number(value).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+        return options.unit === '%' ? `${formatted}%` : formatted;
+      };
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.font = `600 ${options.fontSize || 9}px sans-serif`;
+    ctx.fillStyle = options.color || Chart.defaults.color || '#334155';
+    ctx.textAlign = horizontal ? 'left' : 'center';
+    ctx.textBaseline = horizontal ? 'middle' : 'bottom';
+
+    chart.data.datasets.forEach((dataset, datasetIndex) => {
+      if (!chart.isDatasetVisible(datasetIndex)) return;
+      chart.getDatasetMeta(datasetIndex).data.forEach((bar, index) => {
+        const value = Number(dataset.data[index]);
+        if (!Number.isFinite(value)) return;
+
+        const direction = value < 0 ? -1 : 1;
+        const x = horizontal ? bar.x + direction * 5 : bar.x;
+        const y = horizontal ? bar.y : bar.y - direction * 5;
+        if (horizontal && direction < 0) ctx.textAlign = 'right';
+        ctx.fillText(formatValue(value), x, y);
+        if (horizontal && direction < 0) ctx.textAlign = 'left';
+      });
+    });
+
+    ctx.restore();
+  }
+};
+
+let charts = {};
+
+function migrateLegacyData() {
+  const legacyKeys = {
+    records: [
+      'assistencias_2025_2026_v1',
+      'assistencias_teastezao_snapshot_v1',
+      'assistencias_2026_11_20_v1',
+      'assistencias_2026_11_20_v2',
+      'assistencias_2026_11_20_v3'
+    ],
+    catalogos: [
+      'assistencias_catalogos_v1',
+      'assistencias_catalogos_2026_11_20_v1',
+      'assistencias_catalogos_2026_11_20_v2',
+      'assistencias_catalogos_2026_11_20_v3'
+    ]
+  };
+  const destinations = { records: STORAGE_KEY, catalogos: CAT_KEY };
+
+  try {
+    Object.keys(legacyKeys).forEach(kind => {
+      if (localStorage.getItem(destinations[kind]) !== null) return;
+      for (const sourceKey of legacyKeys[kind]) {
+        const raw = localStorage.getItem(sourceKey);
+        if (raw === null) continue;
+
+        try {
+          const value = JSON.parse(raw);
+          const migratedValue = kind === 'records'
+            ? (Array.isArray(value) ? value : value?.records)
+            : (value?.catalogos || value);
+          const validValue = kind === 'records'
+            ? Array.isArray(migratedValue)
+            : migratedValue && !Array.isArray(migratedValue) && typeof migratedValue === 'object';
+          if (validValue) {
+            localStorage.setItem(destinations[kind], JSON.stringify(migratedValue));
+            break;
+          }
+        } catch (e) {
+          console.warn(`Não foi possível migrar a chave antiga ${sourceKey}:`, e);
+        }
+      }
+    });
+  } catch (e) {
+    console.warn('Não foi possível migrar os dados locais antigos:', e);
+  }
+}
+
+function updateDatasetVersionMarker() {
+  const currentVersion = safeGetStorage(DATA_SOURCE_KEY);
+  if (currentVersion === JSON.stringify(DATA_SOURCE_VERSION)) return;
+  if (currentVersion !== null) {
+    console.info('Atualização do painel detectada; os dados locais existentes foram preservados.');
+  }
+  if (!safeSetStorage(DATA_SOURCE_KEY, DATA_SOURCE_VERSION)) {
+    console.warn('Não foi possível atualizar a versão da base local; os dados existentes foram preservados.');
+  }
+}
+
+function getSavedTheme() {
+  const savedTheme = safeGetStorage(THEME_KEY);
+  if (!savedTheme) return 'light';
+  try {
+    return JSON.parse(savedTheme) === 'dark' ? 'dark' : 'light';
+  } catch (e) {
+    console.warn('Erro ao ler o tema salvo:', e);
+    return 'light';
+  }
+}
+
+function applyTheme(theme) {
+  const isDark = theme === 'dark';
+  document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+  const toggle = document.getElementById('theme-toggle');
+  if (toggle) {
+    toggle.textContent = isDark ? '☀️ Tema claro' : '🌙 Tema escuro';
+    toggle.setAttribute('aria-pressed', String(isDark));
+  }
+
+  if (typeof Chart !== 'undefined') {
+    Chart.defaults.color = isDark ? '#CBD5E1' : '#64748B';
+    Chart.defaults.borderColor = isDark ? '#475569' : '#E2E8F0';
+    Object.values(charts).forEach(chart => chart.update());
+  }
+}
+
+function toggleTheme() {
+  const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(theme);
+  safeSetStorage(THEME_KEY, theme);
+}
+
+function getEmbeddedSnapshot() {
+  try {
+    const el = document.getElementById('embedded-data');
+    if (el && el.textContent.trim() && el.textContent.trim() !== 'null') {
+      return JSON.parse(el.textContent);
+    }
+  } catch (e) {
+    console.error('Erro ao ler snapshot:', e);
+  }
+  return null;
+}
+
+function init() {
+  migrateLegacyData();
+  updateDatasetVersionMarker();
+  applyTheme(getSavedTheme());
+  const snapshot = getEmbeddedSnapshot();
+  loadProductionData(snapshot);
+  const savedRecords = safeGetStorage(STORAGE_KEY);
+  const savedCatalogos = safeGetStorage(CAT_KEY);
+
+  if (savedRecords !== null) {
+    try {
+      state.records = JSON.parse(savedRecords);
+      if (!Array.isArray(state.records)) throw new Error('Formato inválido para os lançamentos salvos.');
+    } catch (e) {
+      console.error('Erro ao ler os lançamentos salvos:', e);
+      state.records = snapshot && Array.isArray(snapshot.records) ? snapshot.records : (SEED_DATA.records || []);
+      safeSetStorage(STORAGE_KEY, state.records);
+    }
+  } else {
+    state.records = snapshot && Array.isArray(snapshot.records)
+      ? snapshot.records
+      : (SEED_DATA.records || []);
+    safeSetStorage(STORAGE_KEY, state.records);
+  }
+
+  if (savedCatalogos !== null) {
+    try {
+      state.catalogos = JSON.parse(savedCatalogos);
+      if (!state.catalogos || typeof state.catalogos !== 'object') throw new Error('Formato inválido para os cadastros salvos.');
+    } catch (e) {
+      console.error('Erro ao ler os cadastros salvos:', e);
+      state.catalogos = snapshot && snapshot.catalogos
+        ? snapshot.catalogos
+        : {
+            produtos: [...SEED_DATA.produtos],
+            origens: [...SEED_DATA.origens],
+            materiais: [...SEED_DATA.materiais],
+            motivos: [...SEED_DATA.motivos],
+            statusList: [...SEED_DATA.statusList]
+          };
+      safeSetStorage(CAT_KEY, state.catalogos);
+    }
+  } else {
+    state.catalogos = snapshot && snapshot.catalogos
+      ? snapshot.catalogos
+      : {
+          produtos: [...SEED_DATA.produtos],
+          origens: [...SEED_DATA.origens],
+          materiais: [...SEED_DATA.materiais],
+          motivos: [...SEED_DATA.motivos],
+          statusList: [...SEED_DATA.statusList]
+        };
+    safeSetStorage(CAT_KEY, state.catalogos);
+  }
+
+  populateDropdowns();
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('inp-data').value = today;
+  const curPer = today.slice(0, 7);
+  if ([...document.getElementById('inp-periodo').options].some(o => o.value === curPer)) {
+    document.getElementById('inp-periodo').value = curPer;
+  }
+  renderAll();
+}
+
+function getAllPeriodos() {
+  const map = {};
+  (SEED_DATA.meses || []).forEach(m => { map[m.key] = m.label; });
+  const nomes = {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'};
+  state.records.forEach(r => {
+    if (r.periodo && !map[r.periodo]) {
+      map[r.periodo] = `${nomes[r.periodo.slice(5,7)] || r.periodo.slice(5,7)}/${r.periodo.slice(0,4)}`;
+    }
+  });
+  return Object.keys(map).sort().map(k => ({ key: k, label: map[k] }));
+}
+
+function populateDropdowns() {
+  const dl = document.getElementById('dl-produtos');
+  dl.innerHTML = state.catalogos.produtos.map(p => `<option value="${escapeHtml(p)}">`).join('');
+
+  fillSelect('inp-origem', [''].concat(state.catalogos.origens), '(Selecione a Origem)');
+  fillSelect('inp-material', [''].concat(state.catalogos.materiais), '(Selecione o Material)');
+  fillSelect('inp-motivo', [''].concat(state.catalogos.motivos), '(Selecione o Motivo)');
+  fillSelect('inp-status', state.catalogos.statusList, null);
+
+  const meses = getAllPeriodos();
+  const inpPer = document.getElementById('inp-periodo');
+  const prevInpPer = inpPer.value;
+  inpPer.innerHTML = meses.map(m => `<option value="${escapeHtml(m.key)}">${escapeHtml(m.label)}</option>`).join('');
+  if (prevInpPer) inpPer.value = prevInpPer;
+
+  const fltPer = document.getElementById('flt-periodo');
+  const curPer = fltPer.value || 'TODOS_2026';
+  const meses2026 = meses.filter(m => m.key.startsWith('2026'));
+  fltPer.innerHTML = '<option value="TODOS_2026">2026 (Ano Inteiro)</option>' +
+    meses2026.map(m => `<option value="${escapeHtml(m.key)}">${escapeHtml(m.label)}</option>`).join('');
+  if ([...fltPer.options].some(o => o.value === curPer)) {
+    fltPer.value = curPer;
+  } else {
+    fltPer.value = 'TODOS_2026';
+  }
+  const productPer = document.getElementById('product-production-period');
+  const currentProductPeriod = productPer.value || fltPer.value;
+  productPer.innerHTML = fltPer.innerHTML;
+  productPer.value = [...productPer.options].some(option => option.value === currentProductPeriod)
+    ? currentProductPeriod
+    : fltPer.value;
+
+  fillSelect('flt-origem', ['TODOS', '(NÃO INFORMADO)'].concat(state.catalogos.origens), 'Todas as Origens');
+  fillSelect('flt-material', ['TODOS', '(NÃO INFORMADO)'].concat(state.catalogos.materiais), 'Todos os Materiais');
+  fillSelect('flt-motivo', ['TODOS'].concat(state.catalogos.motivos), 'Todos os Motivos');
+  const filiais = [...new Set(state.records.map(r => String(r.filial || '').trim()).filter(Boolean))]
+    .sort((a, b) => Number(a) - Number(b) || a.localeCompare(b));
+  const produtos = [...new Set(state.catalogos.produtos.concat(
+    state.records.map(r => String(r.produto || '').trim()).filter(Boolean)
+  ))].sort((a, b) => a.localeCompare(b));
+  fillSelect('flt-filial', ['TODOS'].concat(filiais), 'Todas as Filiais');
+  fillSelect('flt-status', ['TODOS'].concat(state.catalogos.statusList), 'Todos os Status');
+  const filialPeriodos = ['TODOS_2026'].concat(meses.map(m => m.key));
+  fillSelect('filial-periodo', filialPeriodos, '2026 (Ano Inteiro)');
+  [...document.getElementById('filial-periodo').options].forEach(option => {
+    const periodo = meses.find(m => m.key === option.value);
+    if (periodo) option.textContent = periodo.label;
+  });
+  fillSelect('filial-filial', ['TODOS', '(NÃO INFORMADO)'].concat(filiais), 'Todas as Filiais');
+  fillSelect('filial-modelo', ['TODOS', '(NÃO INFORMADO)'].concat(produtos), 'Todos os Modelos');
+  fillSelect('filial-status', ['TODOS'].concat(state.catalogos.statusList), 'Todos os Status');
+  fillSelect('product-analysis-period', ['TODOS', 'ANO_2025', 'ANO_2026'].concat(meses.map(m => m.key)), 'Todos os períodos');
+  [...document.getElementById('product-analysis-period').options].forEach(option => {
+    if (option.value === 'ANO_2025') option.textContent = '2025 (Ano inteiro)';
+    if (option.value === 'ANO_2026') option.textContent = '2026 (Ano inteiro)';
+    const periodo = meses.find(m => m.key === option.value);
+    if (periodo) option.textContent = periodo.label;
+  });
+  fillSelect('product-analysis-filial', ['TODOS'].concat(filiais), 'Todas as filiais');
+  fillSelect('product-analysis-origem', ['TODOS', '(NÃO INFORMADO)'].concat(state.catalogos.origens), 'Todas as origens');
+  fillSelect('product-analysis-status', ['TODOS'].concat(state.catalogos.statusList), 'Todos os status');
+  fillSelect('product-analysis-product', ['TODOS', '(NÃO INFORMADO)'].concat(produtos), 'Todos os modelos');
+  fillSelect('pending-filial', ['TODOS', '(NÃO INFORMADO)'].concat(filiais), 'Todas as filiais');
+  fillSelect('pending-modelo', ['TODOS', '(NÃO INFORMADO)'].concat(produtos), 'Todos os modelos');
+  fillSelect('pending-status', ['TODOS', '(NÃO INFORMADO)'].concat(state.catalogos.statusList), 'Todos os status');
+}
+
+function fillSelect(id, items, firstLabel) {
+  const el = document.getElementById(id);
+  const prev = el.value;
+  el.innerHTML = items.map((v, i) => {
+    const lbl = (i === 0 && firstLabel) ? firstLabel : v;
+    return `<option value="${escapeHtml(v)}">${escapeHtml(lbl)}</option>`;
+  }).join('');
+  if ([...el.options].some(o => o.value === prev)) el.value = prev;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('view-' + tab).classList.add('active');
+  if (tab === 'dashboard') renderDashboard();
+  if (tab === 'cadastros') renderCadastros();
+  if (tab === 'filiais') renderFiliais();
+  if (tab === 'pendencias') renderPendingAnalysis();
+  if (tab === 'materiais') renderProductAnalysis();
+  if (tab === 'producao') renderProductionByProduct();
+}
+
+function renderCadastros() {
+  ['produtos', 'materiais', 'motivos'].forEach(tipo => {
+    const box = document.getElementById('list-' + tipo);
+    box.innerHTML = state.catalogos[tipo].map((item, idx) => `
+      <div class="list-item">
+        <span>${escapeHtml(item)}</span>
+        <button class="btn-danger" onclick="removeCatalog('${tipo}', ${idx})">Remover</button>
+      </div>
+    `).join('');
+  });
+}
+
+function addCatalog(tipo, inputId) {
+  const inp = document.getElementById(inputId);
+  const val = inp.value.trim().toUpperCase();
+  if (!val) return;
+  if (!state.catalogos[tipo].includes(val)) {
+    state.catalogos[tipo].push(val);
+    state.catalogos[tipo].sort();
+    safeSetStorage(CAT_KEY, state.catalogos);
+    populateDropdowns();
+    renderCadastros();
+  }
+  inp.value = '';
+}
+
+function removeCatalog(tipo, idx) {
+  if (!confirm('Remover este item da lista de opções?')) return;
+  state.catalogos[tipo].splice(idx, 1);
+  safeSetStorage(CAT_KEY, state.catalogos);
+  populateDropdowns();
+  renderCadastros();
+}
+
+function formatPeriodoLabel(perKey) {
+  if (!perKey) return '—';
+  const nomes = {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'};
+  return `${nomes[perKey.slice(5,7)] || perKey.slice(5,7)}/${perKey.slice(0,4)}`;
+}
+
+function formatDateBR(dateStr) {
+  if (!dateStr) return '—';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+function formatMoney(v) {
+  return (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function getRecordedCost(record) {
+  const value = Number(record.valor);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function hasRecordedCost(record) {
+  return getRecordedCost(record) !== 0;
+}
+
+function sumRecordedCosts(rows) {
+  return rows.reduce((sum, record) => sum + getRecordedCost(record), 0);
+}
+
+function getCostedPieces(rows) {
+  return rows.reduce((sum, record) => sum + (hasRecordedCost(record) ? (Number(record.qtde) || 0) : 0), 0);
+}
+
+function formatReportedCost(value) {
+  return value === 0 ? '—' : formatMoney(value);
+}
+
+function updateItemEntryLabels() {
+  const entries = Array.from(document.querySelectorAll('#item-list .item-entry'));
+  entries.forEach((entry, index) => {
+    entry.querySelector('.item-entry-heading strong').textContent = `Item ${index + 1}`;
+    entry.querySelector('.remove-item-btn').hidden = index === 0;
+  });
+}
+
+function addItem() {
+  if (document.getElementById('edit-id').value) return;
+
+  const itemList = document.getElementById('item-list');
+  const entries = itemList.querySelectorAll('.item-entry');
+  const item = entries[0].cloneNode(true);
+  const itemNumber = Math.max(...Array.from(entries, entry => Number(entry.dataset.itemNumber) || 1)) + 1;
+  item.dataset.itemNumber = itemNumber;
+
+  item.querySelectorAll('[data-item-field]').forEach(field => {
+    if (field.id) field.id = `${field.id}-item-${itemNumber}`;
+    const name = field.dataset.itemField;
+    if (name === 'qtde') field.value = '1';
+    else if (name === 'valor') field.value = '0.00';
+    else if (name === 'status') field.value = 'ENVIADO CD';
+    else field.value = '';
+  });
+
+  const datalist = item.querySelector('datalist');
+  if (datalist) datalist.remove();
+  item.querySelector('.remove-item-btn').hidden = false;
+  itemList.appendChild(item);
+  updateItemEntryLabels();
+  item.querySelector('[data-item-field="produto"]').focus();
+}
+
+function removeItem(button) {
+  const entries = document.querySelectorAll('#item-list .item-entry');
+  const entry = button.closest('.item-entry');
+  if (entries.length <= 1 || !entry || entry === entries[0]) return;
+  entry.remove();
+  updateItemEntryLabels();
+}
+
+function resetItemEntries() {
+  const entries = Array.from(document.querySelectorAll('#item-list .item-entry'));
+  entries.slice(1).forEach(entry => entry.remove());
+  updateItemEntryLabels();
+}
+
+function saveRecord() {
+  const chamado = document.getElementById('inp-chamado').value.trim().toUpperCase();
+  const data = document.getElementById('inp-data').value;
+  const prazo = document.getElementById('inp-prazo').value;
+  const periodo = document.getElementById('inp-periodo').value || (data ? data.slice(0, 7) : '');
+  const filial = document.getElementById('inp-filial').value.trim().toUpperCase();
+  const op = document.getElementById('inp-op').value.trim().toUpperCase();
+  const editId = document.getElementById('edit-id').value;
+
+  if ((!chamado && !editId) || !data) {
+    alert('Preencha Nº Chamado para novos registros e informe a Data Inicial.');
+    return;
+  }
+
+  const itemEntries = Array.from(document.querySelectorAll('#item-list .item-entry'));
+  const entriesToSave = editId ? itemEntries.slice(0, 1) : itemEntries;
+  const items = [];
+
+  for (let index = 0; index < entriesToSave.length; index++) {
+    const entry = entriesToSave[index];
+    const getValue = name => entry.querySelector(`[data-item-field="${name}"]`).value;
+    const produto = getValue('produto').trim().toUpperCase();
+    const qtde = Number(getValue('qtde'));
+    if (!produto || !Number.isInteger(qtde) || qtde < 1) {
+      alert(`Preencha Modelo e Quantidade válida no Item ${index + 1}.`);
+      entry.querySelector(`[data-item-field="${produto ? 'qtde' : 'produto'}"]`).focus();
+      return;
+    }
+
+    const valorInput = getValue('valor');
+    const valor = valorInput === '' ? 0 : Number(valorInput);
+    if (!Number.isFinite(valor) || valor < 0) {
+      alert(`Informe um valor válido no Item ${index + 1}.`);
+      entry.querySelector('[data-item-field="valor"]').focus();
+      return;
+    }
+
+    const dataNf = getValue('dataNf');
+    let intervalo = null;
+    if (dataNf) {
+      const d1 = new Date(data);
+      const d2 = new Date(dataNf);
+      intervalo = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+    }
+
+    items.push({
+      codigo: getValue('codigo').trim().toUpperCase(),
+      produto,
+      qtde,
+      origem: getValue('origem') || '(NÃO INFORMADO)',
+      material: getValue('material') || '(NÃO INFORMADO)',
+      motivo: unifyMotivo(getValue('motivo')),
+      nf: getValue('nf').trim().toUpperCase(),
+      dataNf,
+      valor,
+      intervalo,
+      status: getValue('status') || 'FINALIZADO'
+    });
+  }
+
+  const novosProdutos = [...new Set(items.map(item => item.produto))]
+    .filter(produto => !state.catalogos.produtos.includes(produto));
+  if (novosProdutos.length) {
+    state.catalogos.produtos.push(...novosProdutos);
+    state.catalogos.produtos.sort();
+    safeSetStorage(CAT_KEY, state.catalogos);
+    populateDropdowns();
+  }
+
+  const dadosChamado = { chamado, data, prazo, periodo, filial, op };
+
+  if (editId) {
+    const idx = state.records.findIndex(r => String(r.id) === String(editId));
+    if (idx !== -1) {
+      state.records[idx] = { ...state.records[idx], id: Number(editId), ...dadosChamado, ...items[0] };
+    }
+  } else {
+    const firstId = state.records.reduce((max, record) => Math.max(max, Number(record.id) || 0), 0) + 1;
+    state.records.unshift(...items.map((item, index) => ({
+      id: firstId + index,
+      ...dadosChamado,
+      ...item
+    })));
+  }
+
+  safeSetStorage(STORAGE_KEY, state.records);
+  clearForm();
+  renderAll();
+}
+
+function editRecord(id) {
+  const rec = state.records.find(r => r.id === id);
+  if (!rec) return;
+  resetItemEntries();
+  document.getElementById('edit-id').value = rec.id;
+  document.getElementById('form-title').textContent = 'Editando Chamado #' + rec.chamado;
+  document.getElementById('add-item-btn').hidden = true;
+  document.getElementById('inp-chamado').value = rec.chamado || '';
+  document.getElementById('inp-data').value = rec.data || '';
+  document.getElementById('inp-prazo').value = rec.prazo || '';
+  document.getElementById('inp-periodo').value = rec.periodo || '';
+  document.getElementById('inp-filial').value = rec.filial || '';
+  document.getElementById('inp-op').value = rec.op || '';
+  document.getElementById('inp-codigo').value = rec.codigo || '';
+  document.getElementById('inp-produto').value = rec.produto === '(NÃO INFORMADO)' ? '' : (rec.produto || '');
+  document.getElementById('inp-qtde').value = rec.qtde || 1;
+  document.getElementById('inp-origem').value = rec.origem === '(NÃO INFORMADO)' ? '' : (rec.origem || '');
+  document.getElementById('inp-material').value = rec.material === '(NÃO INFORMADO)' ? '' : (rec.material || '');
+  document.getElementById('inp-motivo').value = rec.motivo || '';
+  document.getElementById('inp-nf').value = rec.nf || '';
+  document.getElementById('inp-data-nf').value = rec.dataNf || '';
+  document.getElementById('inp-valor').value = rec.valor || 0;
+  document.getElementById('inp-status').value = rec.status || 'FINALIZADO';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteRecord(id) {
+  if (!confirm('Deseja excluir este registro de assistência?')) return;
+  state.records = state.records.filter(r => r.id !== id);
+  safeSetStorage(STORAGE_KEY, state.records);
+  renderAll();
+}
+
+function clearForm() {
+  resetItemEntries();
+  document.getElementById('edit-id').value = '';
+  document.getElementById('form-title').textContent = 'Registrar Novo Chamado de Assistência';
+  document.getElementById('add-item-btn').hidden = false;
+  document.getElementById('inp-chamado').value = '';
+  document.getElementById('inp-prazo').value = '';
+  document.getElementById('inp-filial').value = '';
+  document.getElementById('inp-op').value = '';
+  document.getElementById('inp-codigo').value = '';
+  document.getElementById('inp-produto').value = '';
+  document.getElementById('inp-qtde').value = 1;
+  document.getElementById('inp-origem').value = '';
+  document.getElementById('inp-material').value = '';
+  document.getElementById('inp-motivo').value = '';
+  document.getElementById('inp-nf').value = '';
+  document.getElementById('inp-data-nf').value = '';
+  document.getElementById('inp-valor').value = '0.00';
+}
+
+function resetFilters() {
+  document.getElementById('flt-periodo').value = 'TODOS_2026';
+  document.getElementById('flt-filial').value = 'TODOS';
+  document.getElementById('flt-origem').value = 'TODOS';
+  document.getElementById('flt-material').value = 'TODOS';
+  document.getElementById('flt-motivo').value = 'TODOS';
+  document.getElementById('flt-status').value = 'TODOS';
+  renderDashboard();
+}
+
+function getFilteredRecords(periodOverride) {
+  const fPer = periodOverride || document.getElementById('flt-periodo').value;
+  const fFil = document.getElementById('flt-filial').value;
+  const fOri = document.getElementById('flt-origem').value;
+  const fMat = document.getElementById('flt-material').value;
+  const fMot = document.getElementById('flt-motivo').value;
+  const fSta = document.getElementById('flt-status').value;
+
+  return state.records.filter(r => {
+    // Lógica especial para filtro de períodos/anos
+    if (fPer === 'TODOS_2026') {
+      if (!(r.data || '').startsWith('2026')) return false;
+    } else if (fPer && fPer !== 'TODOS' && !fPer.startsWith('TODOS_') && r.periodo !== fPer) {
+      return false;
+    }
+
+    if (fFil !== 'TODOS' && String(r.filial || '') !== fFil) return false;
+    if (fOri !== 'TODOS' && (r.origem || '(NÃO INFORMADO)') !== fOri) return false;
+    if (fMat !== 'TODOS' && (r.material || '(NÃO INFORMADO)') !== fMat) return false;
+    if (fMot !== 'TODOS' && r.motivo !== fMot) return false;
+    if (fSta !== 'TODOS' && r.status !== fSta) return false;
+    return true;
+  });
+}
+
+function getDashboardPeriodKey() {
+  return document.getElementById('flt-periodo').value || 'TODOS_2026';
+}
+
+function getProductProductionPeriodKey() {
+  return document.getElementById('product-production-period').value || getDashboardPeriodKey();
+}
+
+function getPeriodLabel(periodKey) {
+  const selector = document.getElementById('flt-periodo');
+  const option = [...selector.options].find(item => item.value === periodKey);
+  return option ? option.textContent : periodKey;
+}
+
+function getProductionQuantity(periodKey) {
+  const quantity = Number(productionTotals[periodKey]?.quantity);
+  return Number.isFinite(quantity) && quantity > 0 ? quantity : null;
+}
+
+function getProductionPercent(value, quantity) {
+  return quantity ? (value / quantity) * 100 : null;
+}
+
+function renderProductionTotalInputs() {
+  const periodKey = getDashboardPeriodKey();
+  const entry = productionTotals[periodKey] || {};
+  const quantityInput = document.getElementById('production-total');
+  const dateInput = document.getElementById('production-as-of');
+  const status = document.getElementById('production-total-status');
+  const label = getPeriodLabel(periodKey);
+
+  if (document.activeElement !== quantityInput) {
+    quantityInput.value = entry.quantity ?? '';
+  }
+  if (document.activeElement !== dateInput) {
+    dateInput.value = entry.asOf || new Date().toISOString().slice(0, 10);
+  }
+  document.getElementById('production-period-label').textContent = `Período: ${label}`;
+
+  if (entry.quantity > 0) {
+    status.textContent = `Produção salva: ${Number(entry.quantity).toLocaleString('pt-BR')} unidades até ${formatDateBR(entry.asOf)}.`;
+  } else {
+    status.textContent = 'Informe a produção correspondente ao período selecionado; sem esse valor, os percentuais de produção não serão calculados.';
+  }
+}
+
+function saveProductionTotal() {
+  const periodKey = getDashboardPeriodKey();
+  const quantityInput = document.getElementById('production-total');
+  const dateInput = document.getElementById('production-as-of');
+  const status = document.getElementById('production-total-status');
+  const rawQuantity = quantityInput.value.trim();
+  const quantity = rawQuantity === '' ? null : Number(rawQuantity);
+
+  if (rawQuantity !== '' && (!Number.isFinite(quantity) || quantity < 0 || !Number.isInteger(quantity))) {
+    status.textContent = 'Informe um número inteiro igual ou maior que zero.';
+    return;
+  }
+  if (quantity !== null && !dateInput.value) {
+    status.textContent = 'Informe a data até a qual a produção foi contabilizada.';
+    return;
+  }
+
+  const previousEntry = productionTotals[periodKey];
+  if (quantity === null && !dateInput.value) {
+    delete productionTotals[periodKey];
+  } else {
+    productionTotals[periodKey] = { quantity, asOf: dateInput.value };
+  }
+
+  if (!safeSetStorage(PRODUCTION_TOTALS_KEY, productionTotals)) {
+    if (previousEntry === undefined) delete productionTotals[periodKey];
+    else productionTotals[periodKey] = previousEntry;
+    status.textContent = 'Não foi possível salvar a produção neste perfil do aplicativo.';
+    return;
+  }
+
+  renderDashboard();
+  renderFiliais();
+  renderProductionByProduct();
+}
+
+function handleDashboardPeriodChange() {
+  renderDashboard();
+  renderFiliais();
+  document.getElementById('product-production-period').value = getDashboardPeriodKey();
+  renderProductionByProduct();
+}
+
+function saveProductProduction(input) {
+  const periodKey = getProductProductionPeriodKey();
+  const product = input.dataset.product;
+  const rawQuantity = input.value.trim();
+  const status = document.getElementById('product-production-status');
+
+  if (rawQuantity !== '' && (!Number.isFinite(Number(rawQuantity)) || Number(rawQuantity) < 0 || !Number.isInteger(Number(rawQuantity)))) {
+    status.textContent = 'Informe um número inteiro igual ou maior que zero para a produção do produto.';
+    input.focus();
+    return;
+  }
+
+  const previousPeriod = productProduction[periodKey]
+    ? { ...productProduction[periodKey] }
+    : undefined;
+  if (!productProduction[periodKey]) productProduction[periodKey] = {};
+  if (rawQuantity === '') {
+    delete productProduction[periodKey][product];
+  } else {
+    productProduction[periodKey][product] = Number(rawQuantity);
+  }
+  if (!Object.keys(productProduction[periodKey]).length) delete productProduction[periodKey];
+
+  if (!safeSetStorage(PRODUCT_PRODUCTION_KEY, productProduction)) {
+    if (previousPeriod === undefined) delete productProduction[periodKey];
+    else productProduction[periodKey] = previousPeriod;
+    status.textContent = 'Não foi possível salvar a produção por produto neste perfil do aplicativo.';
+    return;
+  }
+
+  renderProductionByProduct();
+}
+
+function renderProductionByProduct() {
+  const periodKey = getProductProductionPeriodKey();
+  const periodLabel = getPeriodLabel(periodKey);
+  const filteredRows = getFilteredRecords(periodKey);
+  const savedProduction = productProduction[periodKey] || {};
+  const products = new Set([
+    ...state.catalogos.produtos,
+    ...state.records
+      .filter(record => periodKey === 'TODOS_2026'
+        ? String(record.data || '').startsWith('2026')
+        : record.periodo === periodKey)
+      .map(record => String(record.produto || '(NÃO INFORMADO)').trim() || '(NÃO INFORMADO)'),
+    ...Object.keys(savedProduction)
+  ]);
+  const statsByProduct = new Map();
+
+  filteredRows.forEach(record => {
+    const product = String(record.produto || '(NÃO INFORMADO)').trim() || '(NÃO INFORMADO)';
+    if (!statsByProduct.has(product)) {
+      statsByProduct.set(product, { tickets: new Set(), pieces: 0 });
+    }
+    const stats = statsByProduct.get(product);
+    const ticket = getTicketNumber(record);
+    if (ticket) stats.tickets.add(ticket);
+    stats.pieces += Number(record.qtde) || 0;
+  });
+
+  const sortedProducts = [...products].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const productStats = sortedProducts.map(product => {
+    const stats = statsByProduct.get(product) || { tickets: new Set(), pieces: 0 };
+    const produced = Number(savedProduction[product]);
+    const incidence = Number.isFinite(produced) && produced > 0
+      ? getProductionPercent(stats.pieces, produced)
+      : null;
+    return { product, stats, produced, incidence };
+  });
+  document.getElementById('product-production-period-label').textContent = `Período: ${periodLabel}`;
+  document.getElementById('product-production-status').textContent =
+    'Opcional: informe as unidades produzidas de cada modelo no mesmo período. Incidência = peças afetadas ÷ produção do modelo; sem produção informada, o percentual fica em branco. A relação pode passar de 100% quando uma unidade gera várias peças assistidas.';
+
+  const tbody = document.getElementById('tbody-producao-produtos');
+  const sortMode = document.getElementById('product-production-sort').value;
+  const tableProducts = [...productStats].sort((a, b) => {
+    if (sortMode === 'incidence') {
+      if (a.incidence === null && b.incidence !== null) return 1;
+      if (b.incidence === null && a.incidence !== null) return -1;
+      if (a.incidence !== null && b.incidence !== null) {
+        const incidenceDifference = b.incidence - a.incidence;
+        if (incidenceDifference) return incidenceDifference;
+      }
+      return b.stats.pieces - a.stats.pieces || a.product.localeCompare(b.product, 'pt-BR');
+    }
+    if (sortMode === 'name') return a.product.localeCompare(b.product, 'pt-BR');
+    return b.stats.pieces - a.stats.pieces || a.product.localeCompare(b.product, 'pt-BR');
+  });
+  tbody.innerHTML = productStats.length
+    ? tableProducts.map(({ product, stats, produced, incidence }, index) => {
+      return `<tr>
+        <td>${index + 1}</td>
+        <td><strong>${escapeHtml(product)}</strong></td>
+        <td style="text-align:right;"><input type="number" min="0" step="1" value="${Number.isFinite(produced) ? produced : ''}" data-product="${escapeHtml(product)}" onchange="saveProductProduction(this)" aria-label="Unidades produzidas de ${escapeHtml(product)}" style="width:150px; text-align:right;"></td>
+        <td style="text-align:right;">${stats.pieces.toLocaleString('pt-BR')}</td>
+        <td style="text-align:right;">${stats.tickets.size.toLocaleString('pt-BR')}</td>
+        <td style="text-align:right;">${incidence === null ? '—' : `${incidence.toFixed(1).replace('.', ',')}%`}</td>
+      </tr>`;
+    }).join('')
+    : '<tr><td colspan="6" style="text-align:center; color:var(--muted);">Nenhum produto encontrado para o período selecionado.</td></tr>';
+
+  const byPieces = productStats.filter(item => item.stats.pieces > 0)
+    .sort((a, b) => b.stats.pieces - a.stats.pieces || a.product.localeCompare(b.product, 'pt-BR'))
+    .slice(0, 10);
+  const incidenceSortMode = document.getElementById('production-incidence-sort').value;
+  const byIncidence = productStats.filter(item => item.stats.pieces > 0 && item.incidence !== null)
+    .sort((a, b) => {
+      if (incidenceSortMode === 'pieces') {
+        return b.stats.pieces - a.stats.pieces || b.incidence - a.incidence || a.product.localeCompare(b.product, 'pt-BR');
+      }
+      if (incidenceSortMode === 'name') return a.product.localeCompare(b.product, 'pt-BR');
+      return b.incidence - a.incidence || b.stats.pieces - a.stats.pieces || a.product.localeCompare(b.product, 'pt-BR');
+    })
+    .slice(0, 10);
+  drawBarChart(
+    'chartProductionPieces',
+    byPieces.map(item => item.product),
+    byPieces.map(item => item.stats.pieces),
+    '#2B6CB0',
+    true,
+    'peças'
+  );
+  drawBarChart(
+    'chartProductionIncidence',
+    byIncidence.map(item => item.product),
+    byIncidence.map(item => item.incidence),
+    '#D97706',
+    true,
+    '%'
+  );
+  document.getElementById('production-pieces-chart-note').textContent =
+    byPieces.length
+      ? 'Quantidade absoluta de peças afetadas (soma de QTDE); não é percentual.'
+      : 'Não há peças afetadas nos filtros selecionados.';
+  document.getElementById('production-incidence-chart-note').textContent =
+    byIncidence.length
+      ? `Cada barra = peças afetadas ÷ unidades produzidas do mesmo produto no período ${periodLabel}. ${byIncidence.length} ${byIncidence.length === 1 ? 'produto' : 'produtos'} com produção informada; a relação pode exceder 100%.`
+      : 'Informe a produção de um produto com peças afetadas para calcular e exibir o percentual.';
+}
+
+function renderAll() {
+  document.getElementById('count-badge').textContent = state.records.length.toLocaleString('pt-BR');
+  renderTable();
+  renderPendingAnalysis();
+  renderDashboard();
+  renderFiliais();
+  renderProductAnalysis();
+  renderProductionByProduct();
+}
+
+function statusBadge(st) {
+  if (st === 'FINALIZADO') return '<span class="badge b-fin">FINALIZADO</span>';
+  if (st === 'ENVIADO CD') return '<span class="badge b-cd">ENVIADO CD</span>';
+  return `<span class="badge b-prod">${escapeHtml(st || '—')}</span>`;
+}
+
+function renderTable() {
+  const q = (document.getElementById('search-box').value || '').toUpperCase().trim();
+  const chamadoQuery = (document.getElementById('ticket-search').value || '').trim().toUpperCase();
+  const filialQuery = (document.getElementById('branch-search').value || '').trim().toUpperCase();
+  const quickFilter = document.getElementById('quick-filter').value;
+  const tbody = document.getElementById('tbody-lancamentos');
+  const today = new Date();
+  const endDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  start.setDate(start.getDate() - 29);
+  const startDate = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
+
+  // A busca pelo chamado e a busca geral pesquisam toda a base importada.
+  const filtered = state.records.filter(r => {
+    const matchesChamado = !chamadoQuery || String(r.chamado || '').toUpperCase().includes(chamadoQuery);
+    const matchesFilial = !filialQuery || String(r.filial || '').trim().toUpperCase() === filialQuery;
+    const matchesQuickFilter = quickFilter !== 'PRODUCAO_30_DIAS' ||
+      (r.status === 'PRODUÇÃO' && /^\d{4}-\d{2}-\d{2}$/.test(r.data || '') && r.data >= startDate && r.data <= endDate);
+    const matchesSearch = !q ||
+      (r.chamado || '').includes(q) ||
+      (r.produto || '').includes(q) ||
+      (r.codigo || '').includes(q) ||
+      (r.material || '').includes(q) ||
+      (r.motivo || '').includes(q) ||
+      (r.nf || '').includes(q) ||
+      (r.filial || '').includes(q);
+    return matchesQuickFilter && matchesChamado && matchesFilial && matchesSearch;
+  });
+
+  // Ordenação: do mais recente para o mais antigo
+  filtered.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+  const slice = filtered.slice(0, 300);
+  if (!slice.length) {
+    tbody.innerHTML = '<tr><td colspan="17" style="text-align:center; color:var(--muted);">Nenhum registro corresponde aos filtros selecionados.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = slice.map((r, index) => {
+    const setores = ['cor', 'bor', 'fur', 'pin', 'alm']
+      .filter(field => String(r[field] || '').trim())
+      .map(field => `${field.toUpperCase()}: ${r[field]}`)
+      .join(', ');
+    return `<tr>
+      <td>${index + 1}</td>
+      <td style="white-space:nowrap; font-weight:700;">${escapeHtml(r.chamado || '—')}</td>
+      <td style="white-space:nowrap;">${escapeHtml(formatDateBR(r.data))}</td>
+      <td style="white-space:nowrap;">${escapeHtml(formatDateBR(r.prazo))}</td>
+      <td style="white-space:nowrap;">${escapeHtml(formatPeriodoLabel(r.periodo))}</td>
+      <td>${escapeHtml(r.filial || '—')}</td>
+      <td style="white-space:nowrap; font-size:0.78rem;">${escapeHtml(r.codigo || '—')}</td>
+      <td><strong>${escapeHtml(r.produto)}</strong></td>
+      <td style="text-align:right; font-weight:700;">${r.qtde.toLocaleString('pt-BR')}</td>
+      <td>${escapeHtml(setores || '—')}</td>
+      <td>${escapeHtml(r.origem)}</td>
+      <td>${escapeHtml(r.material)}</td>
+      <td>${escapeHtml(r.motivo)}</td>
+      <td>${escapeHtml(r.nf || '—')}</td>
+      <td style="text-align:right; white-space:nowrap;">${formatMoney(r.valor)}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td class="no-print" style="white-space:nowrap;">
+        <button class="btn-edit" onclick="editRecord(${r.id})">Editar</button>
+        <button class="btn-danger" onclick="deleteRecord(${r.id})">X</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function groupSum(arr, keyFn, valFn) {
+  const map = {};
+  arr.forEach(item => {
+    const k = keyFn(item);
+    map[k] = (map[k] || 0) + valFn(item);
+  });
+  return Object.entries(map).sort((a, b) => b[1] - a[1]);
+}
+
+function getTicketNumber(record) {
+  return String(record.chamado || '').trim().toUpperCase();
+}
+
+function countDistinctTickets(rows) {
+  return new Set(rows.map(getTicketNumber).filter(Boolean)).size;
+}
+
+function getMotivoCallRanking(rows) {
+  const grouped = new Map();
+  rows.forEach(record => {
+    const motivo = record.motivo || 'SEM JUSTIFICATIVA / NÃO INFORMADO';
+    if (!grouped.has(motivo)) {
+      grouped.set(motivo, { motivo, chamados: new Set(), registros: 0, pecas: 0 });
+    }
+
+    const item = grouped.get(motivo);
+    const chamado = getTicketNumber(record);
+    if (chamado) item.chamados.add(chamado);
+    item.registros += 1;
+    item.pecas += Number(record.qtde) || 0;
+  });
+
+  return [...grouped.values()]
+    .map(item => ({ ...item, chamados: item.chamados.size }))
+    .sort((a, b) =>
+      b.chamados - a.chamados ||
+      b.pecas - a.pecas ||
+      a.motivo.localeCompare(b.motivo, 'pt-BR')
+    );
+}
+
+function gerarRelatorioFiliais() {
+  const records2026 = state.records.filter(r => (r.data || '').startsWith('2026'));
+  const todasFiliais = [...new Set(state.records.map(r => r.filial).filter(Boolean))];
+
+  const chamadosPorFilial = new Map(todasFiliais.map(f => [f, new Set()]));
+  records2026.forEach(r => {
+    const filial = String(r.filial || '').trim();
+    const chamado = getTicketNumber(r);
+    if (filial && chamado) {
+      if (!chamadosPorFilial.has(filial)) chamadosPorFilial.set(filial, new Set());
+      chamadosPorFilial.get(filial).add(chamado);
+    }
+  });
+
+  const ranking = [...chamadosPorFilial]
+    .map(([filial, chamados]) => [filial, chamados.size])
+    .sort((a, b) => b[1] - a[1]);
+
+  console.log("--- RANKING DE CHAMADOS 2026 ---");
+  ranking.forEach(([filial, qtd]) => {
+    console.log(`${filial}: ${qtd} chamados`);
+  });
+
+  const inativas = ranking.filter(item => item[1] === 0).map(item => item[0]);
+  console.log("--- FILIAIS SEM CHAMADOS EM 2026 ---");
+  console.log(inativas.join(', '));
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function getFilialRecords() {
+  const periodo = document.getElementById('filial-periodo').value;
+  const filial = document.getElementById('filial-filial').value;
+  const modelo = document.getElementById('filial-modelo').value;
+  const status = document.getElementById('filial-status').value;
+
+  return state.records.filter(r => {
+    if (periodo === 'TODOS_2026' && !(r.data || '').startsWith('2026')) return false;
+    if (periodo && periodo !== 'TODOS_2026' && r.periodo !== periodo) return false;
+    if (filial !== 'TODOS' && (String(r.filial || '').trim() || '(NÃO INFORMADO)') !== filial) return false;
+    if (modelo !== 'TODOS' && (String(r.produto || '').trim() || '(NÃO INFORMADO)') !== modelo) return false;
+    if (status !== 'TODOS' && r.status !== status) return false;
+    return true;
+  });
+}
+
+function getFilialRanking(rows) {
+  const grouped = {};
+  rows.forEach(r => {
+    const filial = String(r.filial || '(NÃO INFORMADO)').trim() || '(NÃO INFORMADO)';
+    if (!grouped[filial]) {
+      grouped[filial] = { filial, chamadosSet: new Set(), chamadosComCusto: new Set(), intervalosPorChamado: new Map(), pecas: 0, valor: 0, motivos: {} };
+    }
+    const item = grouped[filial];
+    const chamado = getTicketNumber(r);
+    if (chamado) item.chamadosSet.add(chamado);
+    item.pecas += Number(r.qtde) || 0;
+    if (hasRecordedCost(r)) {
+      item.valor += getRecordedCost(r);
+      item.chamadosComCusto.add(chamado || `REGISTRO-${r.id}`);
+    }
+    const intervalo = Number(r.intervalo);
+    if (r.intervalo !== null && r.intervalo !== '' && Number.isFinite(intervalo) && intervalo >= 0) {
+      const intervalKey = chamado || `REGISTRO-${r.id}`;
+      const current = item.intervalosPorChamado.get(intervalKey) || { sum: 0, count: 0 };
+      current.sum += intervalo;
+      current.count += 1;
+      item.intervalosPorChamado.set(intervalKey, current);
+    }
+    const motivo = r.motivo || 'SEM JUSTIFICATIVA / NÃO INFORMADO';
+    item.motivos[motivo] = (item.motivos[motivo] || 0) + (Number(r.qtde) || 0);
+  });
+
+  return Object.values(grouped).map(item => {
+    const topMotivo = Object.entries(item.motivos).sort((a, b) => b[1] - a[1])[0];
+    const chamados = item.chamadosSet.size;
+    const averageIntervals = [...item.intervalosPorChamado.values()]
+      .map(value => value.sum / value.count);
+    const { chamadosSet, chamadosComCusto, intervalosPorChamado, ...dadosItem } = item;
+    return {
+      ...dadosItem,
+      chamados,
+      mediaChamado: chamadosComCusto.size ? item.valor / chamadosComCusto.size : null,
+      prazoMedio: averageIntervals.length
+        ? averageIntervals.reduce((sum, value) => sum + value, 0) / averageIntervals.length
+        : null,
+      pecasChamado: chamados ? item.pecas / chamados : 0,
+      principalMotivo: topMotivo ? topMotivo[0] : '—'
+    };
+  }).sort((a, b) => b.chamados - a.chamados || b.pecas - a.pecas);
+}
+
+function resetFilialFilters() {
+  document.getElementById('filial-periodo').value = 'TODOS_2026';
+  document.getElementById('filial-filial').value = 'TODOS';
+  document.getElementById('filial-modelo').value = 'TODOS';
+  document.getElementById('filial-status').value = 'TODOS';
+  renderFiliais();
+}
+
+function renderFiliais() {
+  const rows = getFilialRecords();
+  const ranking = getFilialRanking(rows);
+  const filialPeriod = document.getElementById('filial-periodo').value;
+  const productionQuantity = getProductionQuantity(filialPeriod);
+  const filialPeriodLabel = document.getElementById('filial-periodo').selectedOptions[0]?.textContent || filialPeriod;
+  document.getElementById('filial-ranking-context').textContent =
+    `Ordenado por chamados · Produção geral em ${filialPeriodLabel}: ${productionQuantity === null ? 'não informada' : productionQuantity.toLocaleString('pt-BR')}`;
+  const totalPecas = rows.reduce((sum, r) => sum + (Number(r.qtde) || 0), 0);
+  const totalValor = sumRecordedCosts(rows);
+  const chamadosComCusto = new Set(rows.filter(hasRecordedCost)
+    .map(r => String(r.chamado || '').trim().toUpperCase() || `REGISTRO-${r.id}`)
+    .filter(Boolean)).size;
+
+  document.getElementById('filial-kpi-total').textContent = ranking.length.toLocaleString('pt-BR');
+  document.getElementById('filial-kpi-chamados').textContent = countDistinctTickets(rows).toLocaleString('pt-BR');
+  document.getElementById('filial-kpi-pecas').textContent = totalPecas.toLocaleString('pt-BR');
+  document.getElementById('filial-kpi-valor').textContent = formatReportedCost(totalValor);
+  document.getElementById('filial-kpi-media').textContent =
+    chamadosComCusto
+      ? `Média por chamado com custo: ${formatMoney(totalValor / chamadosComCusto)}`
+      : 'Sem custos informados';
+
+  const byCalls = ranking.slice(0, 15);
+  const byCost = ranking.filter(r => r.valor !== 0).sort((a, b) => b.valor - a.valor).slice(0, 15);
+  const byPrazo = ranking.filter(r => r.prazoMedio !== null)
+    .sort((a, b) => b.prazoMedio - a.prazoMedio)
+    .slice(0, 15);
+  drawBarChart('chartFilialChamados', byCalls.map(r => r.filial), byCalls.map(r => r.chamados), '#2B6CB0', true, 'chamados');
+  drawBarChart('chartFilialCustos', byCost.map(r => r.filial), byCost.map(r => r.valor), '#15803D', true, 'R$');
+  drawBarChart('chartFilialPrazo', byPrazo.map(r => r.filial), byPrazo.map(r => r.prazoMedio), '#D97706', true, 'dias');
+
+  const topVolume = ranking[0];
+  const topCost = byCost[0];
+  const topAverage = ranking.filter(r => r.mediaChamado !== null)
+    .sort((a, b) => b.mediaChamado - a.mediaChamado)[0];
+  document.getElementById('filial-insight-volume').textContent = topVolume
+    ? `Filial ${topVolume.filial}: ${topVolume.chamados.toLocaleString('pt-BR')} chamados`
+    : 'Nenhum registro no filtro atual';
+  document.getElementById('filial-insight-custo').textContent = topCost
+    ? `Filial ${topCost.filial}: ${formatMoney(topCost.valor)}`
+    : 'Nenhum registro no filtro atual';
+  document.getElementById('filial-insight-media').textContent = topAverage
+    ? `Filial ${topAverage.filial}: ${formatMoney(topAverage.mediaChamado)} por chamado`
+    : 'Nenhum registro no filtro atual';
+
+  document.getElementById('tbody-ranking-filiais').innerHTML = ranking.map((r, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td><strong>${escapeHtml(r.filial)}</strong></td>
+      <td style="text-align:right;">${r.chamados.toLocaleString('pt-BR')}</td>
+      <td style="text-align:right; font-weight:700;">${r.pecas.toLocaleString('pt-BR')}</td>
+      <td style="text-align:right;">${getProductionPercent(r.chamados, productionQuantity) === null ? '—' : `${getProductionPercent(r.chamados, productionQuantity).toFixed(1).replace('.', ',')}%`}</td>
+      <td style="text-align:right; white-space:nowrap;">${formatReportedCost(r.valor)}</td>
+      <td style="text-align:right; white-space:nowrap;">${r.mediaChamado === null ? '—' : formatMoney(r.mediaChamado)}</td>
+      <td style="text-align:right;">${r.prazoMedio === null ? '—' : `${r.prazoMedio.toFixed(1).replace('.', ',')} dias`}</td>
+      <td style="text-align:right;">${r.pecasChamado.toFixed(1).replace('.', ',')}</td>
+      <td>${escapeHtml(r.principalMotivo)}</td>
+    </tr>
+  `).join('');
+  renderFilialDetails(rows);
+  renderCustomFilialChart();
+}
+
+function renderFilialDetails(rows) {
+  const sortedRows = [...rows].sort((a, b) =>
+    String(b.data || '').localeCompare(String(a.data || '')) ||
+    String(a.chamado || '').localeCompare(String(b.chamado || ''), 'pt-BR', { numeric: true })
+  );
+  const tbody = document.getElementById('tbody-filial-detalhes');
+  const count = sortedRows.length;
+  document.getElementById('filial-detail-count').textContent =
+    `${count.toLocaleString('pt-BR')} ${count === 1 ? 'registro' : 'registros'}`;
+
+  if (!sortedRows.length) {
+    tbody.innerHTML = '<tr><td colspan="16" style="text-align:center; color:var(--muted);">Nenhum registro corresponde aos filtros selecionados.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = sortedRows.map((r, index) => {
+    const setores = ['cor', 'bor', 'fur', 'pin', 'alm']
+      .filter(field => String(r[field] || '').trim())
+      .map(field => `${field.toUpperCase()}: ${r[field]}`)
+      .join(', ');
+    return `<tr>
+      <td>${index + 1}</td>
+      <td style="white-space:nowrap; font-weight:700;">${escapeHtml(r.chamado || '—')}</td>
+      <td style="white-space:nowrap;">${escapeHtml(formatDateBR(r.data))}</td>
+      <td style="white-space:nowrap;">${escapeHtml(formatDateBR(r.prazo))}</td>
+      <td style="white-space:nowrap;">${escapeHtml(formatPeriodoLabel(r.periodo))}</td>
+      <td>${escapeHtml(r.filial || '—')}</td>
+      <td style="white-space:nowrap; font-size:0.78rem;">${escapeHtml(r.codigo || '—')}</td>
+      <td><strong>${escapeHtml(r.produto)}</strong></td>
+      <td style="text-align:right; font-weight:700;">${(Number(r.qtde) || 0).toLocaleString('pt-BR')}</td>
+      <td>${escapeHtml(setores || '—')}</td>
+      <td>${escapeHtml(r.origem || '—')}</td>
+      <td>${escapeHtml(r.material || '—')}</td>
+      <td>${escapeHtml(r.motivo || '—')}</td>
+      <td>${escapeHtml(r.nf || '—')}</td>
+      <td style="text-align:right; white-space:nowrap;">${formatMoney(r.valor)}</td>
+      <td>${statusBadge(r.status)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function getPendingCases() {
+  const grouped = new Map();
+  state.records.forEach(record => {
+    if (String(record.status || '').trim().toUpperCase() === 'FINALIZADO') return;
+    const chamado = String(record.chamado || '').trim().toUpperCase();
+    const key = chamado ? `CHAMADO-${chamado}` : `REGISTRO-${record.id}`;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(record);
+  });
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return [...grouped.entries()].map(([key, records]) => {
+    const datas = records.map(record => record.data)
+      .filter(data => /^\d{4}-\d{2}-\d{2}$/.test(data || ''))
+      .filter(data => Number.isFinite(new Date(`${data}T00:00:00`).getTime()))
+      .sort();
+    const prazos = records.map(record => record.prazo)
+      .filter(prazo => /^\d{4}-\d{2}-\d{2}$/.test(prazo || ''))
+      .sort();
+    const dataAbertura = datas[0] || '';
+    const prazo = prazos[0] || '';
+    const diasEmAberto = dataAbertura
+      ? Math.max(0, Math.floor((today - new Date(`${dataAbertura}T00:00:00`)) / 86400000))
+      : null;
+    const distinct = selector => [...new Set(records.map(selector).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    return {
+      key,
+      chamado: records.find(record => String(record.chamado || '').trim())?.chamado || '—',
+      dataAbertura,
+      prazo,
+      diasEmAberto,
+      filiais: distinct(record => String(record.filial || '').trim()),
+      modelos: distinct(record => String(record.produto || '').trim()),
+      status: distinct(record => String(record.status || '').trim()),
+      itens: records.length
+    };
+  });
+}
+
+function getPendingAgeBand(days) {
+  if (days === null) return 'SEM_DATA';
+  if (days <= 7) return '0-7';
+  if (days <= 15) return '8-15';
+  if (days <= 30) return '16-30';
+  return '31+';
+}
+
+function resetPendingFilters() {
+  document.getElementById('pending-filial').value = 'TODOS';
+  document.getElementById('pending-modelo').value = 'TODOS';
+  document.getElementById('pending-status').value = 'TODOS';
+  document.getElementById('pending-age').value = 'TODOS';
+  renderPendingAnalysis();
+}
+
+function renderPendingAnalysis() {
+  const filial = document.getElementById('pending-filial').value;
+  const modelo = document.getElementById('pending-modelo').value;
+  const status = document.getElementById('pending-status').value;
+  const faixa = document.getElementById('pending-age').value;
+  const rows = getPendingCases().filter(item => {
+    if (filial !== 'TODOS' && !(item.filiais.length ? item.filiais : ['(NÃO INFORMADO)']).includes(filial)) return false;
+    if (modelo !== 'TODOS' && !(item.modelos.length ? item.modelos : ['(NÃO INFORMADO)']).includes(modelo)) return false;
+    if (status !== 'TODOS' && (item.status.length ? item.status : ['(NÃO INFORMADO)']).indexOf(status) < 0) return false;
+    if (faixa !== 'TODOS' && getPendingAgeBand(item.diasEmAberto) !== faixa) return false;
+    return true;
+  }).sort((a, b) => (b.diasEmAberto ?? -1) - (a.diasEmAberto ?? -1) || a.key.localeCompare(b.key));
+
+  const counts = { '0-7': 0, '8-15': 0, '16-30': 0, '31+': 0, SEM_DATA: 0 };
+  rows.forEach(item => { counts[getPendingAgeBand(item.diasEmAberto)] += 1; });
+  document.getElementById('pending-kpi-total').textContent = rows.length.toLocaleString('pt-BR');
+  document.getElementById('pending-kpi-0-7').textContent = counts['0-7'].toLocaleString('pt-BR');
+  document.getElementById('pending-kpi-8-15').textContent = counts['8-15'].toLocaleString('pt-BR');
+  document.getElementById('pending-kpi-16-30').textContent = counts['16-30'].toLocaleString('pt-BR');
+  document.getElementById('pending-kpi-31-plus').textContent = counts['31+'].toLocaleString('pt-BR');
+  drawBarChart('chartPendingAge', ['0–7 dias', '8–15 dias', '16–30 dias', '31+ dias', 'Sem data'], [
+    counts['0-7'], counts['8-15'], counts['16-30'], counts['31+'], counts.SEM_DATA
+  ], '#2B6CB0', false, 'chamados');
+
+  const visible = rows.slice(0, 300);
+  document.getElementById('pending-table-count').textContent =
+    `Mostrando ${visible.length.toLocaleString('pt-BR')} de ${rows.length.toLocaleString('pt-BR')} chamados`;
+  document.getElementById('tbody-pendencias').innerHTML = visible.length
+    ? visible.map((item, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td><strong>${escapeHtml(item.chamado)}</strong></td>
+        <td style="white-space:nowrap;">${escapeHtml(item.dataAbertura ? formatDateBR(item.dataAbertura) : '—')}</td>
+        <td style="white-space:nowrap;">${escapeHtml(item.prazo ? formatDateBR(item.prazo) : '—')}</td>
+        <td style="text-align:right;">${item.diasEmAberto === null ? '—' : item.diasEmAberto.toLocaleString('pt-BR')}</td>
+        <td>${escapeHtml(item.status.join(', ') || '(NÃO INFORMADO)')}</td>
+        <td>${escapeHtml(item.filiais.join(', ') || '(NÃO INFORMADO)')}</td>
+        <td>${escapeHtml(item.modelos.join(', ') || '(NÃO INFORMADO)')}</td>
+        <td style="text-align:right;">${item.itens.toLocaleString('pt-BR')}</td>
+      </tr>
+    `).join('')
+    : '<tr><td colspan="9" style="text-align:center; color:var(--muted);">Nenhuma pendência encontrada para os filtros atuais.</td></tr>';
+}
+
+function renderCustomFilialChart() {
+  const metricSelect = document.getElementById('filial-chart-metric');
+  const typeSelect = document.getElementById('filial-chart-type');
+  const canvas = document.getElementById('chartFilialCustom');
+  if (!metricSelect || !typeSelect || !canvas) return;
+
+  const metric = metricSelect.value;
+  const type = typeSelect.value;
+  const metricLabels = {
+    chamados: 'Número de chamados',
+    pecas: 'Peças assistidas',
+    valor: 'Custo total',
+    mediaChamado: 'Custo médio por chamado',
+    prazoMedio: 'Tempo médio de atendimento'
+  };
+  const unit = metric === 'valor' || metric === 'mediaChamado' ? 'R$'
+    : metric === 'prazoMedio' ? 'dias'
+    : metric === 'pecas' ? 'peças'
+    : 'chamados';
+  const ranking = getFilialRanking(getFilialRecords())
+    .filter(r => metric !== 'prazoMedio' || r.prazoMedio !== null)
+    .filter(r => !['valor', 'mediaChamado'].includes(metric) || r.valor !== 0)
+    .sort((a, b) => b[metric] - a[metric])
+    .slice(0, 10);
+  const labels = ranking.map(r => r.filial);
+  const values = ranking.map(r => r[metric]);
+  const isCircular = type === 'pie' || type === 'doughnut';
+  const colors = ['#1E3A5F', '#2B6CB0', '#3182CE', '#15803D', '#D97706', '#DC2626', '#7C3AED', '#0891B2', '#64748B', '#DB2777'];
+
+  document.getElementById('filial-custom-title').textContent =
+    `Top 10 Filiais — ${metricLabels[metric]}`;
+  if (charts.chartFilialCustom) charts.chartFilialCustom.destroy();
+
+  const formatValue = value => unit === 'R$'
+    ? formatMoney(value)
+    : `${Number(value).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} ${unit}`;
+  const dataset = {
+    label: metricLabels[metric],
+    data: values,
+    backgroundColor: isCircular ? colors : '#2B6CB0',
+    borderColor: type === 'line' ? '#2B6CB0' : '#FFFFFF',
+    borderWidth: type === 'line' ? 2 : 1,
+    borderRadius: type === 'bar' ? 4 : 0,
+    tension: 0.25,
+    fill: false
+  };
+
+  charts.chartFilialCustom = new Chart(canvas.getContext('2d'), {
+    type,
+    data: { labels, datasets: [dataset] },
+    plugins: [barValueLabelsPlugin],
+    options: {
+      indexAxis: type === 'bar' ? 'y' : 'x',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: isCircular, position: 'right' },
+        barValueLabels: { unit },
+        tooltip: {
+          callbacks: {
+            label: context => {
+              const value = Number(isCircular ? context.parsed : context.parsed[type === 'bar' ? 'x' : 'y']) || 0;
+              if (!isCircular) return ` ${formatValue(value)}`;
+              const total = values.reduce((sum, item) => sum + item, 0);
+              const percent = total ? (value / total * 100).toFixed(1).replace('.', ',') : '0,0';
+              return ` ${formatValue(value)} (${percent}%)`;
+            }
+          }
+        }
+      },
+      scales: isCircular ? {} : {
+        x: { grid: { display: type !== 'bar' }, ticks: { font: { size: 10 } }, grace: type === 'bar' ? '25%' : undefined },
+        y: { grid: { display: type === 'bar' }, ticks: { font: { size: 10 } }, grace: type === 'bar' ? undefined : '25%' }
+      }
+    }
+  });
+}
+
+function getProductAnalysisRecords() {
+  const periodo = document.getElementById('product-analysis-period').value;
+  const filial = document.getElementById('product-analysis-filial').value;
+  const origem = document.getElementById('product-analysis-origem').value;
+  const status = document.getElementById('product-analysis-status').value;
+  const produto = document.getElementById('product-analysis-product').value;
+
+  return state.records.filter(r => {
+    const ref = r.periodo || '';
+    if (periodo === 'ANO_2025' && !ref.startsWith('2025')) return false;
+    if (periodo === 'ANO_2026' && !ref.startsWith('2026')) return false;
+    if (periodo !== 'TODOS' && !periodo.startsWith('ANO_') && ref !== periodo) return false;
+    if (filial !== 'TODOS' && String(r.filial || '').trim() !== filial) return false;
+    if (origem !== 'TODOS' && (r.origem || '(NÃO INFORMADO)') !== origem) return false;
+    if (status !== 'TODOS' && r.status !== status) return false;
+    if (produto !== 'TODOS' && (r.produto || '(NÃO INFORMADO)') !== produto) return false;
+    return true;
+  });
+}
+
+function getProductRanking(rows) {
+  const grouped = new Map();
+  rows.forEach(r => {
+    const produto = String(r.produto || '(NÃO INFORMADO)').trim() || '(NÃO INFORMADO)';
+    if (!grouped.has(produto)) {
+      grouped.set(produto, {
+        produto,
+        chamadosSet: new Set(),
+        registros: 0,
+        pecas: 0,
+        pecasComCusto: 0,
+        valor: 0
+      });
+    }
+
+    const item = grouped.get(produto);
+    const chamado = getTicketNumber(r);
+    if (chamado) item.chamadosSet.add(chamado);
+    item.registros += 1;
+    item.pecas += Number(r.qtde) || 0;
+    if (hasRecordedCost(r)) {
+      item.pecasComCusto += Number(r.qtde) || 0;
+      item.valor += getRecordedCost(r);
+    }
+  });
+
+  return [...grouped.values()].map(item => ({
+    produto: item.produto,
+    chamados: item.chamadosSet.size,
+    registros: item.registros,
+    pecas: item.pecas,
+    valor: item.valor,
+    custoPeca: item.pecasComCusto ? item.valor / item.pecasComCusto : null
+  })).sort((a, b) => b.valor - a.valor || b.chamados - a.chamados);
+}
+
+function resetProductAnalysisFilters() {
+  document.getElementById('product-analysis-period').value = 'TODOS';
+  document.getElementById('product-analysis-filial').value = 'TODOS';
+  document.getElementById('product-analysis-origem').value = 'TODOS';
+  document.getElementById('product-analysis-status').value = 'TODOS';
+  document.getElementById('product-analysis-product').value = 'TODOS';
+  renderProductAnalysis();
+}
+
+function renderProductAnalysis() {
+  const rows = getProductAnalysisRecords();
+  const ranking = getProductRanking(rows);
+  const rankingWithCost = ranking.filter(r => r.valor !== 0);
+  const totalChamados = countDistinctTickets(rows);
+  const totalPecas = rows.reduce((sum, r) => sum + (Number(r.qtde) || 0), 0);
+  const totalValor = sumRecordedCosts(rows);
+  const pecasComCusto = getCostedPieces(rows);
+
+  document.getElementById('product-kpi-chamados').textContent = totalChamados.toLocaleString('pt-BR');
+  document.getElementById('product-kpi-total').textContent = ranking.length.toLocaleString('pt-BR');
+  document.getElementById('product-kpi-pecas').textContent = totalPecas.toLocaleString('pt-BR');
+  document.getElementById('product-kpi-valor').textContent = formatReportedCost(totalValor);
+  document.getElementById('product-kpi-custo-peca').textContent =
+    pecasComCusto
+      ? `Custo médio por peça de reposição: ${formatMoney(totalValor / pecasComCusto)}`
+      : 'Sem custos informados';
+
+  const byCalls = [...ranking].sort((a, b) => b.chamados - a.chamados || b.registros - a.registros).slice(0, 10);
+  const byCost = rankingWithCost.slice(0, 10);
+  const byProblems = [...ranking].sort((a, b) =>
+    b.pecas - a.pecas ||
+    b.chamados - a.chamados ||
+    a.produto.localeCompare(b.produto, 'pt-BR')
+  );
+  drawBarChart('chartProductChamados', byCalls.map(r => r.produto), byCalls.map(r => r.chamados), '#2B6CB0', true, 'chamados únicos');
+  drawBarChart('chartProductCusto', byCost.map(r => r.produto), byCost.map(r => r.valor), '#15803D', true, 'R$');
+
+  document.getElementById('tbody-ranking-produtos-problemas').innerHTML = byProblems.length
+    ? byProblems.map((r, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td><strong>${escapeHtml(r.produto)}</strong></td>
+        <td style="text-align:right;">${r.chamados.toLocaleString('pt-BR')}</td>
+        <td style="text-align:right;">${r.registros.toLocaleString('pt-BR')}</td>
+        <td style="text-align:right; font-weight:700;">${r.pecas.toLocaleString('pt-BR')}</td>
+      </tr>
+    `).join('')
+    : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">Nenhum produto encontrado para os filtros selecionados.</td></tr>';
+
+  const tbody = document.getElementById('tbody-ranking-produtos');
+  if (!rankingWithCost.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--muted);">Nenhum modelo com custo registrado corresponde aos filtros selecionados.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rankingWithCost.map((r, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td><strong>${escapeHtml(r.produto)}</strong></td>
+      <td style="text-align:right;">${r.chamados.toLocaleString('pt-BR')}</td>
+      <td style="text-align:right;">${r.registros.toLocaleString('pt-BR')}</td>
+      <td style="text-align:right; font-weight:700;">${r.pecas.toLocaleString('pt-BR')}</td>
+      <td style="text-align:right; white-space:nowrap;">${formatReportedCost(r.valor)}</td>
+      <td style="text-align:right;">${r.valor !== 0 && totalValor !== 0 ? `${((r.valor / totalValor) * 100).toFixed(1).replace('.', ',')}%` : '—'}</td>
+      <td style="text-align:right; white-space:nowrap;">${r.custoPeca === null ? '—' : formatMoney(r.custoPeca)}</td>
+    </tr>
+  `).join('');
+}
+
+function renderDashboard() {
+  const rows = getFilteredRecords();
+  const totalPecas = rows.reduce((acc, r) => acc + r.qtde, 0);
+  const totalChamados = countDistinctTickets(rows);
+  const totalValor = sumRecordedCosts(rows);
+  const pecasComCusto = getCostedPieces(rows);
+  const productionQuantity = getProductionQuantity(getDashboardPeriodKey());
+  renderProductionTotalInputs();
+
+  document.getElementById('kpi-pecas').textContent = totalPecas.toLocaleString('pt-BR');
+  document.getElementById('kpi-chamados').textContent =
+    `Chamados únicos: ${totalChamados.toLocaleString('pt-BR')}`;
+
+  document.getElementById('kpi-valor').textContent = formatReportedCost(totalValor);
+  document.getElementById('kpi-valor-sub').textContent = pecasComCusto
+    ? `Custo médio: ${formatMoney(totalValor / pecasComCusto)} / peça`
+    : 'Sem custos informados';
+
+  const validInt = rows.filter(r => r.intervalo !== null && r.intervalo >= 0);
+  const avgInt = validInt.length ? Math.round(validInt.reduce((a, r) => a + r.intervalo, 0) / validInt.length) : 0;
+  document.getElementById('kpi-intervalo').textContent = `${avgInt} dias`;
+
+  const byMotivo = groupSum(rows, r => r.motivo, r => r.qtde);
+  const byMaterial = groupSum(rows, r => r.material || '(NÃO INFORMADO)', r => r.qtde);
+  const byProduto = groupSum(rows, r => r.produto || '(NÃO INFORMADO)', r => r.qtde);
+
+  if (byMotivo.length) {
+    const pct = getProductionPercent(byMotivo[0][1], productionQuantity);
+    document.getElementById('kpi-motivo').textContent = byMotivo[0][0];
+    document.getElementById('kpi-motivo-sub').textContent =
+      `${byMotivo[0][1].toLocaleString('pt-BR')} peças (${pct === null ? 'produção não informada' : `${pct.toFixed(1).replace('.', ',')}% da produção geral`})`;
+  } else {
+    document.getElementById('kpi-motivo').textContent = '—';
+    document.getElementById('kpi-motivo-sub').textContent = '0 peças';
+  }
+
+  if (byProduto.length) {
+    const pct = getProductionPercent(byProduto[0][1], productionQuantity);
+    document.getElementById('kpi-produto').textContent = byProduto[0][0];
+    document.getElementById('kpi-produto-sub').textContent =
+      `${byProduto[0][1].toLocaleString('pt-BR')} peças (${pct === null ? 'produção não informada' : `${pct.toFixed(1).replace('.', ',')}% da produção geral`})`;
+  } else {
+    document.getElementById('kpi-produto').textContent = '—';
+    document.getElementById('kpi-produto-sub').textContent = '0 peças';
+  }
+
+  const topMot = byMotivo.slice(0, 10);
+  drawBarChart('chartMotivo', topMot.map(x => x[0]), topMot.map(x => x[1]), '#1E3A5F', true);
+
+  const topMat = byMaterial.slice(0, 10);
+  drawBarChart('chartMaterial', topMat.map(x => x[0]), topMat.map(x => x[1]), '#2B6CB0', true);
+
+  const topProd = byProduto.slice(0, 10);
+  drawBarChart('chartProduto', topProd.map(x => x[0]), topProd.map(x => x[1]), '#3182CE', true);
+
+  // Evolução mensal respeitando os filtros de Origem, Material, Motivo e Status
+  const rowsNoMonth = state.records.filter(r => {
+    const fOri = document.getElementById('flt-origem').value;
+    const fMat = document.getElementById('flt-material').value;
+    const fMot = document.getElementById('flt-motivo').value;
+    const fSta = document.getElementById('flt-status').value;
+    if (fOri !== 'TODOS' && (r.origem || '(NÃO INFORMADO)') !== fOri) return false;
+    if (fMat !== 'TODOS' && (r.material || '(NÃO INFORMADO)') !== fMat) return false;
+    if (fMot !== 'TODOS' && r.motivo !== fMot) return false;
+    if (fSta !== 'TODOS' && r.status !== fSta) return false;
+    return true;
+  });
+
+  const meses2026 = getAllPeriodos().filter(m => m.key.startsWith('2026'));
+  const monthLabels = meses2026.map(m => m.label);
+  const monthVals = meses2026.map(m => rowsNoMonth.filter(r => r.periodo === m.key).reduce((a, r) => a + r.qtde, 0));
+  drawBarChart('chartMensal', monthLabels, monthVals, '#1E3A5F', false);
+
+  // Tabela Resumo Motivos
+  const tbodyMot = document.getElementById('tbody-resumo-motivo');
+  tbodyMot.innerHTML = getMotivoCallRanking(rows).map((item, index) => {
+    const { motivo: motName, chamados, registros, pecas: qtd } = item;
+    const subRows = rows.filter(r => (r.motivo || 'SEM JUSTIFICATIVA / NÃO INFORMADO') === motName);
+    const valSum = sumRecordedCosts(subRows);
+    const topM = groupSum(subRows, r => r.material || '(NÃO INFORMADO)', r => r.qtde)[0];
+    const pct = getProductionPercent(chamados, productionQuantity);
+    return `<tr>
+      <td>${index + 1}</td>
+      <td><strong>${escapeHtml(motName)}</strong></td>
+      <td style="text-align:right;">${chamados.toLocaleString('pt-BR')}</td>
+      <td style="text-align:right;">${registros.toLocaleString('pt-BR')}</td>
+      <td style="text-align:right; font-weight:700;">${qtd.toLocaleString('pt-BR')}</td>
+      <td style="text-align:right;">${pct === null ? '—' : `${pct.toFixed(1).replace('.', ',')}%`}</td>
+      <td style="text-align:right; font-weight:600;">${formatReportedCost(valSum)}</td>
+      <td>${topM ? `${escapeHtml(topM[0])} (${topM[1].toLocaleString('pt-BR')} pçs)` : '—'}</td>
+    </tr>`;
+  }).join('');
+
+}
+
+function wrapChartLabel(label, maxLength = 24) {
+  const words = String(label).split(/\s+/);
+  const lines = [];
+  let line = '';
+
+  words.forEach(word => {
+    const candidate = line ? `${line} ${word}` : word;
+    if (line && candidate.length > maxLength) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = candidate;
+    }
+  });
+  if (line) lines.push(line);
+  if (lines.length <= 1) return label;
+  if (lines.length > 2) {
+    const remainder = lines.slice(1).join(' ');
+    lines[1] = remainder.length > maxLength
+      ? `${remainder.slice(0, maxLength - 3)}...`
+      : remainder;
+    lines.length = 2;
+  }
+  return lines;
+}
+
+function drawBarChart(canvasId, labels, values, color, horizontal, unit = 'peças') {
+  if (charts[canvasId]) charts[canvasId].destroy();
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  charts[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    plugins: [barValueLabelsPlugin],
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: color,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: horizontal ? 'y' : 'x',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        barValueLabels: { unit },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const value = ctx.parsed[horizontal ? 'x' : 'y'];
+              if (unit === 'R$') return ` ${formatMoney(value)}`;
+              const formatted = Number(value).toLocaleString('pt-BR', {
+                maximumFractionDigits: unit === '%' ? 1 : 0
+              });
+              return unit === '%' ? ` ${formatted}%` : ` ${formatted} ${unit}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: !horizontal },
+          ticks: {
+            font: { size: 10 },
+            callback: value => unit === '%' ? `${value}%` : value
+          },
+          grace: horizontal ? '25%' : undefined
+        },
+        y: {
+          grid: { display: horizontal },
+          ticks: {
+            font: { size: canvasId === 'chartProduto' || canvasId.startsWith('chartProduct') ? 8 : 9 },
+            callback: function(value) {
+              const label = this.getLabelForValue(value);
+              return horizontal ? wrapChartLabel(label) : label;
+            }
+          },
+          grace: horizontal ? undefined : '25%'
+        }
+      }
+    }
+  });
+}
+
+function exportExcel() {
+  const rows = state.records.map(r => ({
+    'CHAMADO': r.chamado,
+    'DATA INICIAL': formatDateBR(r.data),
+    'PRAZO': formatDateBR(r.prazo),
+    'FILIAL': r.filial,
+    'OP': r.op,
+    'CODIGO': r.codigo,
+    'MODELOS': r.produto,
+    'QTDE': r.qtde,
+    'COR': r.cor || '',
+    'BOR': r.bor || '',
+    'FUR': r.fur || '',
+    'PIN': r.pin || '',
+    'ALM': r.alm || '',
+    'Nº': r.nf,
+    'DATA': formatDateBR(r.dataNf),
+    'VALOR': r.valor,
+    'INTERVALO': r.intervalo,
+    'STATUS': r.status,
+    'PERIODO': r.periodo,
+    'ORIGEM': r.origem,
+    'MATERIAL': r.material,
+    'MOTIVO': r.motivo
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Assistências Unificadas');
+  XLSX.writeFile(wb, 'Relatorio_Assistencias_Unificado_Exportado.xlsx');
+}
+
+function importExcel(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true });
+    const sheetName = wb.SheetNames.includes('Lançamento') ? 'Lançamento' : wb.SheetNames[0];
+    const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1 });
+    let headerIdx = rawRows.findIndex(r => {
+      if (!r) return false;
+      const candidates = r.map(c => String(c || '').trim().toUpperCase());
+      return candidates.includes('CHAMADO') &&
+        candidates.includes('DATA INICIAL') &&
+        candidates.some(name => ['MODELOS', 'MODELO', 'PRODUTO'].includes(name));
+    });
+    if (headerIdx === -1) headerIdx = 0;
+    const headers = rawRows[headerIdx].map(h => String(h || '').trim().toUpperCase());
+    const dataRows = rawRows.slice(headerIdx + 1);
+
+    const idxOf = (names) => headers.findIndex(h => names.includes(h));
+    const iCham = idxOf(['CHAMADO']);
+    const iData = idxOf(['DATA INICIAL', 'DATA']);
+    const iPrazo = idxOf(['PRAZO']);
+    const iDataNf = idxOf(['DATA NF', 'DATA']);
+    const iFil = idxOf(['FILIAL']);
+    const iOp = idxOf(['OP']);
+    const iCod = idxOf(['CODIGO', 'CÓDIGO']);
+    const iMod = idxOf(['MODELOS', 'MODELO', 'PRODUTO']);
+    const iQtd = idxOf(['QTDE', 'QUANTIDADE']);
+    const iNf = idxOf(['Nº', 'NOTA FISCAL', 'NF']);
+    const iVal = idxOf(['VALOR', 'VALOR (R$)']);
+    const iInt = idxOf(['INTERVALO', 'INTERVALO (DIAS)']);
+    const iSta = idxOf(['STATUS']);
+    const iPer = idxOf(['PERIODO', 'PERÍODO']);
+    const iOri = idxOf(['ORIGEM']);
+    const iMat = idxOf(['MATERIAL']);
+    const iMot = idxOf(['MOTIVO', 'MOTIVO UNIFICADO']);
+    const iCor = idxOf(['COR']);
+    const iBor = idxOf(['BOR']);
+    const iFur = idxOf(['FUR']);
+    const iPin = idxOf(['PIN']);
+    const iAlm = idxOf(['ALM']);
+
+    const imported = [];
+    dataRows.forEach((r, idx) => {
+      if (!r || !r.length) return;
+      const mod = iMod >= 0 ? String(r[iMod] || '').replace(/\u00a0/g, ' ').trim().toUpperCase() : '';
+      const cham = iCham >= 0 ? String(r[iCham] || '').trim() : '';
+      if (!mod && !cham) return;
+
+      const parseDt = (v) => {
+        if (!v) return '';
+        if (v instanceof Date && !isNaN(v)) return v.toISOString().slice(0, 10);
+        const s = String(v).trim();
+        if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) return `${s.slice(6,10)}-${s.slice(3,5)}-${s.slice(0,2)}`;
+        return s.slice(0, 10);
+      };
+
+      const dtStr = iData >= 0 ? parseDt(r[iData]) : '';
+      const perRaw = iPer >= 0 ? parseDt(r[iPer]) : '';
+      const perKey = perRaw ? perRaw.slice(0, 7) : (dtStr ? dtStr.slice(0, 7) : '');
+      const qtd = iQtd >= 0 ? (parseInt(String(r[iQtd]).replace("'", ""), 10) || 0) : 0;
+
+      imported.push({
+        id: idx + 1,
+        chamado: cham,
+        data: dtStr,
+        prazo: iPrazo >= 0 ? parseDt(r[iPrazo]) : '',
+        periodo: perKey,
+        filial: iFil >= 0 ? String(r[iFil] || '').trim() : '',
+        op: iOp >= 0 ? String(r[iOp] || '').trim() : '',
+        codigo: iCod >= 0 ? String(r[iCod] || '').trim().toUpperCase() : '',
+        produto: mod || '(NÃO INFORMADO)',
+        qtde: qtd,
+        cor: iCor >= 0 ? String(r[iCor] || '').trim() : '',
+        bor: iBor >= 0 ? String(r[iBor] || '').trim() : '',
+        fur: iFur >= 0 ? String(r[iFur] || '').trim() : '',
+        pin: iPin >= 0 ? String(r[iPin] || '').trim() : '',
+        alm: iAlm >= 0 ? String(r[iAlm] || '').trim() : '',
+        nf: iNf >= 0 ? String(r[iNf] || '').trim() : '',
+        dataNf: iDataNf >= 0 ? parseDt(r[iDataNf]) : '',
+        valor: iVal >= 0 ? (parseFloat(r[iVal]) || 0) : 0,
+        intervalo: iInt >= 0 && r[iInt] !== undefined && r[iInt] !== '' ? Math.round(Number(r[iInt])) : null,
+        status: iSta >= 0 ? (String(r[iSta] || '').trim().toUpperCase() || 'FINALIZADO') : 'FINALIZADO',
+        origem: iOri >= 0 ? (String(r[iOri] || '').trim().toUpperCase() || '(NÃO INFORMADO)') : '(NÃO INFORMADO)',
+        material: iMat >= 0 ? (String(r[iMat] || '').trim().toUpperCase() || '(NÃO INFORMADO)') : '(NÃO INFORMADO)',
+        motivo: unifyMotivo(iMot >= 0 ? r[iMot] : '')
+      });
+    });
+
+    if (!imported.length) { alert('Nenhum registro válido encontrado na planilha.'); return; }
+    if (confirm(`Foram encontrados ${imported.length} registros. Deseja substituir a base atual (os motivos redundantes serão unificados automaticamente)?`)) {
+      state.records = imported;
+      safeSetStorage(STORAGE_KEY, state.records);
+      populateDropdowns();
+      renderAll();
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+function formatPowerPointPercent(value, quantity) {
+  const percent = getProductionPercent(value, quantity);
+  return percent === null ? '—' : `${percent.toFixed(1).replace('.', ',')}%`;
+}
+
+const POWERPOINT_DARK_THEME = {
+  background: '0F172A',
+  surface: '1E293B',
+  header: '1D4ED8',
+  border: '334155',
+  text: 'E2E8F0',
+  muted: '94A3B8',
+  title: 'F8FAFC',
+  subtitle: 'CBD5E1',
+  chartGrid: '#334155',
+  chartTicks: '#CBD5E1',
+  chartValues: '#F8FAFC'
+};
+
+function getPowerPointFilters() {
+  return ['flt-filial', 'flt-origem', 'flt-material', 'flt-motivo', 'flt-status']
+    .map(id => {
+      const select = document.getElementById(id);
+      const option = select.options[select.selectedIndex];
+      if (!option || select.value === 'TODOS') return null;
+      const label = select.closest('.field')?.querySelector('label')?.textContent || id;
+      return `${label}: ${option.textContent}`;
+    })
+    .filter(Boolean);
+}
+
+function createPowerPointChart(rows, getLabel, getValue, unit, color) {
+  if (!rows.length) return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = 1500;
+  canvas.height = 950;
+  let chart;
+  try {
+    chart = new Chart(canvas.getContext('2d'), {
+      type: 'bar',
+      plugins: [barValueLabelsPlugin],
+      data: {
+        labels: rows.map(row => wrapChartLabel(getLabel(row), 28)),
+        datasets: [{
+          data: rows.map(getValue),
+          backgroundColor: color,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: false,
+        animation: false,
+        maintainAspectRatio: false,
+        layout: { padding: { left: 12, right: 160, top: 16, bottom: 10 } },
+        plugins: {
+          legend: { display: false },
+          barValueLabels: { unit, color: POWERPOINT_DARK_THEME.chartValues, fontSize: 24 },
+          tooltip: { enabled: false }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            grid: { color: POWERPOINT_DARK_THEME.chartGrid },
+            ticks: { color: POWERPOINT_DARK_THEME.chartTicks, font: { size: 22 } },
+            grace: '25%'
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: POWERPOINT_DARK_THEME.chartTicks, font: { size: 22 } }
+          }
+        }
+      }
+    });
+    chart.update('none');
+    return canvas.toDataURL('image/png');
+  } finally {
+    if (chart) chart.destroy();
+  }
+}
+
+function addPowerPointTitle(slide, title, subtitle) {
+  slide.background = { color: POWERPOINT_DARK_THEME.background };
+  slide.addText(title, {
+    x: 0.55, y: 0.27, w: 12.2, h: 0.48,
+    fontFace: 'Aptos Display', fontSize: 24, bold: true,
+    color: POWERPOINT_DARK_THEME.title, margin: 0
+  });
+  slide.addText(subtitle, {
+    x: 0.58, y: 0.82, w: 12.1, h: 0.38,
+    fontFace: 'Aptos', fontSize: 10, color: POWERPOINT_DARK_THEME.subtitle, margin: 0
+  });
+}
+
+function addPowerPointTable(slide, headers, rows, columnWidths) {
+  const header = headers.map(text => ({
+    text,
+    options: { bold: true, color: 'FFFFFF', fill: POWERPOINT_DARK_THEME.header, align: 'center' }
+  }));
+  const body = rows.map(row => row.map(text => String(text)));
+  slide.addTable([header, ...body], {
+    x: 8.32, y: 1.42, w: 4.7,
+    colW: columnWidths,
+    rowH: 0.43,
+    fontFace: 'Aptos',
+    fontSize: 9,
+    color: POWERPOINT_DARK_THEME.text,
+    fill: POWERPOINT_DARK_THEME.surface,
+    margin: 0.04,
+    border: { type: 'solid', color: POWERPOINT_DARK_THEME.border, pt: 0.5 },
+    valign: 'mid'
+  });
+}
+
+function addPowerPointRankingSlide(pptx, config) {
+  const slide = pptx.addSlide();
+  addPowerPointTitle(slide, config.title, config.subtitle);
+  const chartData = createPowerPointChart(
+    config.chartRows,
+    config.getLabel,
+    config.getValue,
+    config.unit,
+    config.color
+  );
+  if (chartData) {
+    slide.addImage({ data: chartData, x: 0.42, y: 1.38, w: 7.65, h: 5.55 });
+  } else {
+    slide.addText('Sem dados para os filtros selecionados.', {
+      x: 0.8, y: 3.2, w: 6.9, h: 0.5,
+      fontFace: 'Aptos', fontSize: 14, color: POWERPOINT_DARK_THEME.muted, align: 'center'
+    });
+  }
+  addPowerPointTable(slide, config.headers, config.tableRows, config.columnWidths);
+  slide.addText(config.note, {
+    x: 0.58, y: 7.08, w: 12.2, h: 0.22,
+    fontFace: 'Aptos', fontSize: 8, color: POWERPOINT_DARK_THEME.muted, margin: 0
+  });
+}
+
+async function exportPowerPoint() {
+  const button = document.getElementById('btn-export-powerpoint');
+  const status = document.getElementById('production-total-status');
+  if (typeof PptxGenJS === 'undefined') {
+    const message = 'A biblioteca de PowerPoint não foi carregada. Reabra o painel e tente novamente.';
+    status.textContent = message;
+    alert(message);
+    return;
+  }
+
+  button.disabled = true;
+  status.textContent = 'Preparando gráficos e apresentação...';
+  try {
+    const pptx = new PptxGenJS();
+    pptx.layout = 'LAYOUT_WIDE';
+    pptx.author = 'CabralDesk';
+    pptx.subject = 'Relatório de assistências e produção';
+    pptx.title = 'Relatório de Assistências';
+    pptx.company = 'CabralDesk';
+    pptx.lang = 'pt-BR';
+    pptx.theme = {
+      headFontFace: 'Aptos Display',
+      bodyFontFace: 'Aptos',
+      lang: 'pt-BR'
+    };
+
+    const rows = getFilteredRecords();
+    const periodKey = getDashboardPeriodKey();
+    const periodLabel = getPeriodLabel(periodKey);
+    const productionQuantity = getProductionQuantity(periodKey);
+    const productionEntry = productionTotals[periodKey] || {};
+    const rankingProducts = getProductRanking(rows)
+      .sort((a, b) => b.pecas - a.pecas || b.chamados - a.chamados)
+      .slice(0, 10);
+    const rankingMotives = getMotivoCallRanking(rows).slice(0, 10);
+    const rankingBranches = getFilialRanking(rows);
+    const filterSummary = getPowerPointFilters();
+    const filterText = filterSummary.length
+      ? filterSummary.join(' | ')
+      : 'Sem filtros adicionais';
+    const dateStamp = new Date().toLocaleDateString('pt-BR');
+
+    const cover = pptx.addSlide();
+    cover.background = { color: POWERPOINT_DARK_THEME.background };
+    cover.addText('Relatório de Assistências', {
+      x: 0.7, y: 0.55, w: 12, h: 0.7,
+      fontFace: 'Aptos Display', fontSize: 30, bold: true,
+      color: POWERPOINT_DARK_THEME.title, margin: 0
+    });
+    cover.addText(`Período analisado: ${periodLabel}  |  Gerado em: ${dateStamp}`, {
+      x: 0.73, y: 1.32, w: 12, h: 0.35,
+      fontFace: 'Aptos', fontSize: 13, color: POWERPOINT_DARK_THEME.subtitle, margin: 0
+    });
+
+    const totalPieces = rows.reduce((sum, record) => sum + (Number(record.qtde) || 0), 0);
+    const totalTickets = countDistinctTickets(rows);
+    const generalCallPercent = formatPowerPointPercent(totalTickets, productionQuantity);
+    const generalPiecePercent = formatPowerPointPercent(totalPieces, productionQuantity);
+    const productionText = productionQuantity === null
+      ? 'Não informada'
+      : `${productionQuantity.toLocaleString('pt-BR')} unidades`;
+    const coverRows = [
+      ['Indicador', 'Resultado'],
+      ['Chamados únicos', totalTickets.toLocaleString('pt-BR')],
+      ['Peças afetadas (soma de QTDE)', totalPieces.toLocaleString('pt-BR')],
+      ['Registros (linhas importadas)', rows.length.toLocaleString('pt-BR')],
+      ['Produção total da fábrica', productionText],
+      ['Chamados ÷ produção geral', generalCallPercent],
+      ['Peças afetadas ÷ produção geral', generalPiecePercent]
+    ].map((row, rowIndex) => row.map(text => ({
+      text,
+      options: rowIndex === 0
+        ? { bold: true, color: 'FFFFFF', fill: POWERPOINT_DARK_THEME.header }
+        : { color: POWERPOINT_DARK_THEME.text }
+    })));
+    cover.addTable(coverRows, {
+      x: 0.72, y: 2.0, w: 6.15, colW: [3.65, 2.5],
+      rowH: 0.48, fontFace: 'Aptos', fontSize: 10,
+      fill: POWERPOINT_DARK_THEME.surface,
+      margin: 0.06, border: { type: 'solid', color: POWERPOINT_DARK_THEME.border, pt: 0.5 },
+      valign: 'mid'
+    });
+    const productionDateText = productionEntry.asOf
+      ? formatDateBR(productionEntry.asOf)
+      : 'Não informada';
+    cover.addText(
+      `Base de produção contabilizada até: ${productionDateText}\n\n` +
+      `Filtros: ${filterText}\n\n` +
+      'Os percentuais comparam os números de assistência informados à produção total da fábrica no período selecionado. Como a produção é centralizada, o percentual por filial usa o total geral, não uma produção própria da filial.',
+      {
+        x: 7.35, y: 2.15, w: 5.2, h: 3.3,
+        fontFace: 'Aptos', fontSize: 13, color: POWERPOINT_DARK_THEME.text,
+        valign: 'mid', margin: 0.12
+      }
+    );
+    cover.addText(
+      'A relação chamados/produção é comparativa e não identifica unidades defeituosas individualmente: uma mesma unidade pode gerar mais de um chamado ou peça assistida.',
+      {
+        x: 0.75, y: 6.2, w: 11.9, h: 0.55,
+        fontFace: 'Aptos', fontSize: 11, color: POWERPOINT_DARK_THEME.muted, margin: 0
+      }
+    );
+
+    addPowerPointRankingSlide(pptx, {
+      title: 'Produtos com maiores problemas',
+      subtitle: 'Ranking por peças afetadas. A tabela compara peças, chamados únicos e produção informada por modelo.',
+      chartRows: rankingProducts,
+      getLabel: item => item.produto,
+      getValue: item => item.pecas,
+      unit: 'peças',
+      color: '#60A5FA',
+      headers: ['#', 'Produto', 'Chamados', 'Peças', 'Produzido', 'Incid.'],
+      columnWidths: [0.3, 1.55, 0.65, 0.65, 0.8, 0.75],
+      tableRows: rankingProducts.map((item, index) => {
+        const produced = Number(productProduction[periodKey]?.[item.produto]);
+        const incidence = Number.isFinite(produced) && produced > 0
+          ? formatPowerPointPercent(item.pecas, produced)
+          : '—';
+        return [
+          index + 1,
+          item.produto.length > 32 ? `${item.produto.slice(0, 29)}...` : item.produto,
+          item.chamados.toLocaleString('pt-BR'),
+          item.pecas.toLocaleString('pt-BR'),
+          Number.isFinite(produced) ? produced.toLocaleString('pt-BR') : '—',
+          incidence
+        ];
+      }),
+      note: 'Incidência do modelo = peças afetadas ÷ unidades produzidas daquele modelo. Sem produção por modelo informada, não há taxa específica; a relação pode superar 100%.'
+    });
+
+    addPowerPointRankingSlide(pptx, {
+      title: 'Motivos mais recorrentes',
+      subtitle: 'Ranking por chamados distintos; o número do chamado é contado uma vez por motivo.',
+      chartRows: rankingMotives,
+      getLabel: item => item.motivo,
+      getValue: item => item.chamados,
+      unit: 'chamados',
+      color: '#A78BFA',
+      headers: ['#', 'Motivo', 'Chamados', 'Peças', '% produção'],
+      columnWidths: [0.35, 1.65, 0.75, 0.7, 1.25],
+      tableRows: rankingMotives.map((item, index) => [
+        index + 1,
+        item.motivo.length > 34 ? `${item.motivo.slice(0, 31)}...` : item.motivo,
+        item.chamados.toLocaleString('pt-BR'),
+        item.pecas.toLocaleString('pt-BR'),
+        formatPowerPointPercent(item.chamados, productionQuantity)
+      ]),
+      note: 'Chamados são distintos; peças são a soma de QTDE. Percentual = chamados únicos daquele motivo ÷ produção total da fábrica no período.'
+    });
+
+    const branchCalls = rankingBranches.slice(0, 10);
+    addPowerPointRankingSlide(pptx, {
+      title: 'Filiais com mais chamados',
+      subtitle: 'Chamados únicos por filial. Chamados repetidos em várias linhas são contados uma única vez.',
+      chartRows: branchCalls,
+      getLabel: item => `Filial ${item.filial}`,
+      getValue: item => item.chamados,
+      unit: 'chamados',
+      color: '#38BDF8',
+      headers: ['#', 'Filial', 'Chamados', 'Peças', '% produção'],
+      columnWidths: [0.35, 1.55, 0.9, 0.7, 1.2],
+      tableRows: branchCalls.map((item, index) => [
+        index + 1,
+        item.filial,
+        item.chamados.toLocaleString('pt-BR'),
+        item.pecas.toLocaleString('pt-BR'),
+        formatPowerPointPercent(item.chamados, productionQuantity)
+      ]),
+      note: 'Chamados são distintos; peças são somadas pela coluna QTDE. Percentual usa a produção total centralizada, não uma produção por filial.'
+    });
+
+    const branchCosts = rankingBranches.filter(item => item.valor > 0)
+      .sort((a, b) => b.valor - a.valor)
+      .slice(0, 10);
+    addPowerPointRankingSlide(pptx, {
+      title: 'Filiais com maior custo',
+      subtitle: 'Ranking pelo custo total registrado nas linhas filtradas.',
+      chartRows: branchCosts,
+      getLabel: item => `Filial ${item.filial}`,
+      getValue: item => item.valor,
+      unit: 'R$',
+      color: '#4ADE80',
+      headers: ['#', 'Filial', 'Custo total', 'Chamados', 'Peças'],
+      columnWidths: [0.35, 1.3, 1.15, 0.85, 1.05],
+      tableRows: branchCosts.map((item, index) => [
+        index + 1,
+        item.filial,
+        formatMoney(item.valor),
+        item.chamados.toLocaleString('pt-BR'),
+        item.pecas.toLocaleString('pt-BR')
+      ]),
+      note: 'Custo total calculado pela soma dos custos registrados para cada filial; valores não informados não entram na soma.'
+    });
+
+    const branchTimes = rankingBranches.filter(item => item.prazoMedio !== null)
+      .sort((a, b) => b.prazoMedio - a.prazoMedio)
+      .slice(0, 10);
+    addPowerPointRankingSlide(pptx, {
+      title: 'Ranking do tempo de atendimento',
+      subtitle: 'Prazo médio em dias por filial; o tempo é calculado uma vez por chamado, não uma vez por linha/peça.',
+      chartRows: branchTimes,
+      getLabel: item => `Filial ${item.filial}`,
+      getValue: item => item.prazoMedio,
+      unit: 'dias',
+      color: '#FBBF24',
+      headers: ['#', 'Filial', 'Média (dias)', 'Chamados', 'Peças'],
+      columnWidths: [0.35, 1.3, 1.15, 0.85, 1.05],
+      tableRows: branchTimes.map((item, index) => [
+        index + 1,
+        item.filial,
+        `${item.prazoMedio.toFixed(1).replace('.', ',')} dias`,
+        item.chamados.toLocaleString('pt-BR'),
+        item.pecas.toLocaleString('pt-BR')
+      ]),
+      note: 'Para chamados com várias linhas, primeiro é calculada a média dos prazos daquele chamado; depois, a média dos chamados da filial.'
+    });
+
+    const methodology = pptx.addSlide();
+    addPowerPointTitle(methodology, 'Como interpretar os números', 'Definições e denominadores usados nesta apresentação.');
+    methodology.addText(
+      '• Chamado único: cada número de chamado é contado uma vez dentro do ranking analisado.\n' +
+      '• Registro: uma linha/item importado. Exemplo: lateral esquerda e lateral direita em linhas separadas são dois registros.\n' +
+      '• Peças afetadas: soma da coluna QTDE; não é a quantidade de chamados.\n' +
+      '• Produção geral: quantidade total da fábrica informada manualmente para o período, junto com a data “produzido até”.\n' +
+      '• Percentual geral: chamados únicos ÷ produção geral. Nas filiais, o denominador continua sendo a produção centralizada da fábrica.\n' +
+      '• Incidência por produto: peças afetadas do modelo ÷ produção informada daquele modelo. Sem produção por produto, a taxa não é calculada.\n' +
+      '• Tempo de atendimento: média em dias por chamado; linhas repetidas do mesmo chamado não aumentam o peso desse chamado.\n' +
+      '• Custo por filial: soma dos valores registrados nas linhas filtradas.',
+      {
+        x: 0.78, y: 1.55, w: 11.9, h: 4.9,
+        fontFace: 'Aptos', fontSize: 16, color: POWERPOINT_DARK_THEME.text,
+        valign: 'mid', margin: 0.16,
+        paraSpaceAfterPt: 12
+      }
+    );
+
+    const safePeriod = periodKey.replace(/[^A-Za-z0-9_-]/g, '_');
+    await pptx.writeFile({ fileName: `Relatorio_Assistencias_${safePeriod}.pptx` });
+    status.textContent = 'Apresentação PowerPoint gerada com sucesso.';
+  } catch (error) {
+    console.error('Erro ao gerar apresentação PowerPoint:', error);
+    const message = `Não foi possível gerar a apresentação: ${error.message || error}`;
+    status.textContent = message;
+    alert(message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function exportSelfContainedHTML() {
+  try {
+    const snapshot = {
+      records: state.records,
+      catalogos: state.catalogos,
+      productionTotals,
+      productProduction,
+      savedAt: new Date().toISOString()
+    };
+    const safeJson = JSON.stringify(snapshot).replace(/<\/script>/gi, '<\\/script>');
+
+    const clone = document.documentElement.cloneNode(true);
+    let dataScript = clone.querySelector('#embedded-data');
+    if (!dataScript) {
+      dataScript = document.createElement('script');
+      dataScript.id = 'embedded-data';
+      dataScript.type = 'application/json';
+      clone.querySelector('body').insertBefore(dataScript, clone.querySelector('body').firstChild);
+    }
+    dataScript.textContent = safeJson;
+
+    const libraries = await Promise.all([
+      fetch('vendor/chart.umd.js').then(response => {
+        if (!response.ok) throw new Error('Não foi possível carregar o Chart.js para exportação.');
+        return response.text();
+      }),
+      fetch('vendor/xlsx.full.min.js').then(response => {
+        if (!response.ok) throw new Error('Não foi possível carregar o SheetJS para exportação.');
+        return response.text();
+      }),
+      fetch('vendor/pptxgen.bundle.js').then(response => {
+        if (!response.ok) throw new Error('Não foi possível carregar o PptxGenJS para exportação.');
+        return response.text();
+      })
+    ]);
+    clone.querySelectorAll('script[src]').forEach(script => {
+      const source = script.getAttribute('src') || '';
+      const library = source.endsWith('chart.umd.js') ? libraries[0]
+        : source.endsWith('xlsx.full.min.js') ? libraries[1]
+        : source.endsWith('pptxgen.bundle.js') ? libraries[2]
+        : null;
+      if (library !== null) {
+        script.removeAttribute('src');
+        script.textContent = library.replace(/<\/script/gi, '<\\/script');
+      }
+    });
+
+    clone.querySelectorAll('#item-list > .item-entry:not(:first-child)').forEach(item => item.remove());
+
+    ['tbody-lancamentos', 'tbody-resumo-motivo', 'tbody-ranking-filiais', 'tbody-ranking-produtos', 'tbody-ranking-produtos-problemas', 'tbody-producao-produtos', 'list-produtos', 'list-materiais', 'list-motivos', 'dl-produtos'].forEach(id => {
+      const el = clone.querySelector('#' + id);
+      if (el) el.innerHTML = '';
+    });
+
+    const docHtml = '<!DOCTYPE html>\n' + clone.outerHTML;
+    const blob = new Blob([docHtml], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const hoje = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `Relatorio_Assistencias_2025_2026_${hoje}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    alert(`Cópia salva com sucesso (${state.records.length} registros)!\n\nAbra o arquivo baixado "${a.download}" da pasta Downloads — todos os seus dados estão gravados dentro dele.`);
+  } catch (err) {
+    alert('Erro ao gerar cópia HTML: ' + err.message);
+  }
+}
+
+init();
+</script>
+
+</body></html>

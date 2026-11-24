@@ -1,0 +1,11 @@
+{
+  "name": "cabraldesk-panel-assets",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "vendor:pptxgen": "node scripts/vendor-pptxgen.cjs"
+  },
+  "devDependencies": {
+    "pptxgenjs": "4.0.1"
+  }
+}

@@ -1,0 +1,15 @@
+bin/
+obj/
+publish-*/
+node_modules/
+Dados/
+*.user
+*.suo
+*.xlsx
+*.xls
+*.pptx
+*.zip
+*.db
+*.sqlite
+*.log
+.vs/
